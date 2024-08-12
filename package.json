@@ -1,0 +1,52 @@
+{
+	"name": "@lo-fi/local-vault",
+	"description": "Store key-value data encrypted (biometric passkey protected), locally in the client",
+	"version": "0.0.0",
+	"exports": {
+		".": "./dist/bundlers/lv.mjs",
+		"./adapter/local-storage": "./dist/bundlers/adapter.local-storage.js",
+		"./adapter/session-storage": "./dist/bundlers/adapter.session-storage.js",
+		"./adapter/idb": "./dist/bundlers/adapter.idb.js",
+		"./adapter/opfs": "./dist/bundlers/adapter.opfs.js",
+		"./adapter/cookie": "./dist/bundlers/adapter.cookie.js",
+		"./bundlers/astro": "./bundler-plugins/astro.mjs",
+		"./bundlers/vite": "./bundler-plugins/vite.mjs",
+		"./bundlers/webpack": "./bundler-plugins/webpack.mjs"
+	},
+	"browser": {
+		"@lo-fi/local-vault": "./dist/bundlers/lv.mjs"
+	},
+	"scripts": {
+		"build:all": "node scripts/build-all.js",
+		"build:gh-pages": "npm run build:all && node scripts/build-gh-pages.js",
+		"build": "npm run build:all",
+		"test:start": "npx http-server test/ -p 8080",
+		"test": "npm run test:start",
+		"postinstall": "node scripts/postinstall.js",
+		"prepublishOnly": "npm run build:all"
+	},
+	"dependencies": {
+		"@lo-fi/local-data-lock": "~0.9.4",
+		"idb-keyval": "~6.2.1"
+	},
+	"devDependencies": {
+		"micromatch": "~4.0.5",
+		"recursive-readdir-sync": "~1.0.6",
+		"terser": "~5.29.2"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mylofi/local-vault.git"
+	},
+	"keywords": [
+		"local-first",
+		"encryption"
+	],
+	"bugs": {
+		"url": "https://github.com/mylofi/local-vault/issues",
+		"email": "getify@gmail.com"
+	},
+	"homepage": "https://github.com/mylofi/local-vault",
+	"author": "Kyle Simpson <getify@gmail.com>",
+	"license": "MIT"
+}
