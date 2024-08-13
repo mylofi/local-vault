@@ -128,7 +128,7 @@ else {
 }
 ```
 
-## Creating A Local Vault
+## Local Vaults
 
 A "local vault" is a JS object (JSON compatible), with the following three properties:
 
@@ -138,9 +138,11 @@ A "local vault" is a JS object (JSON compatible), with the following three prope
 
 * `data` string, holding the encrypted data in base64 encoding
 
-This vault object is stored in the [client storage mechanism](#client-side-storage-adapters) you choose, either directly (for IndexedDB) or as a JSON serialized string.
+This local vault object is stored in the [client storage mechanism](#client-side-storage-adapters) you choose, either directly (for IndexedDB) or as a JSON serialized string.
 
-That vault object is distinct from the vault-instance that you interact with in code. The vault-instance is a simple API (`get()`, `set()`, etc) for managing key-value style data access. Encryption and key-management is all handled automatically while interacting with the vault-instance.
+## Setting up a local vault instance
+
+The local vault object described previously is distinct from the vault-instance that you interact with in code. The vault-instance exposes a simple API (`get()`, `set()`, etc) for managing key-value style data access. Encryption and key-management is all handled automatically while interacting with the vault-instance.
 
 To setup a new vault-instance, use the `connect()` method:
 
@@ -153,8 +155,8 @@ var vault = await connect({
     addNewVault: true,
     keyOptions: {
         username: "passkey-user",
-        displayName: "Passkey User",
-    },
+        displayName: "Passkey User"
+    }
 });
 
 vault.id;               // ".." (auto-generated string)
@@ -170,22 +172,56 @@ Generally, you'll probably save the auto-generated `vault.id` value to use in su
 ```js
 var vault = await connect({
    storageType: "idb",
-   vaultID: "..",           // existing vault ID
+   vaultID: ".."            // existing vault ID
 });
 ```
+
+**Note:** If the vault's lock-key (biometric passkey protected) is still in the recent-access cache (default timeout: 30 minutes), the `connect()` call will complete silently. Otherwise, the user will be prompted by the device to re-authenticate with their passkey (to access the lock-key) before unlocking the vault.
 
 ### Discoverable Vaults
 
 Saving the `vault.id` to use later does create a bit of a chicken-and-the-egg problem, because then you have to separately choose which client-side storage you want to persist that value in, and manage it appropriately. The value may even be saved at first but lost later.
 
-So you can instead use "discoverable" mode to detect which vault to use, based on which passkey the user chooses to authenticate with:
+So you can instead use "discovery" mode to detect which vault to use, based on which passkey the user chooses to authenticate with:
 
 ```js
 var vault = await connect({
     storageType: "idb",
-    discoverVault: true,
-})
+    discoverVault: true
+});
 ```
+
+Discovery mode should only be used when you're sure the user has already setup a vault on this device. If a suitable passkey is not authenticated with, and matching vault is not found, a discovery mode `connect()` call will fail with an exception.
+
+**Note:** Discovery mode will *always* prompt the user for passkey authentication. This might mean a user would have to reauthenticate on each page load, for example. As an affordance to reduce user friction, you might choose to store the vault-ID in `sessionStorage`, along with a timestamp. Even after page refreshes, you might keep using this vault-ID **without** discovery mode. But after a certain amount of time since last authentication has passed, you might choose to push for reauthentication by using discovery mode. Alternatively, you might call `lock()` on the vault-instance after a certain period of time, thereby ensuring the next vault operation will re-prompt the user for passkey authentication.
+
+## Removing All Local Data
+
+As a full-reset (across all defined storage mechanisms), `removeAll()` will clear out all local vaults:
+
+```js
+import { removeAll } from "..";
+
+var success = await removeAll();
+```
+
+This is *very* dangerous (for user's data viability), and cannot be undone. Be careful not to do this unless the user's data has already been preserved elsewhere, or if the *user has given informed-consent* to discarding their data.
+
+----
+
+To also remove all local passkey accounts (from `localStorage`):
+
+```js
+import { listLocalIdentities, removeLocalAccount } from "..";
+
+for (let localIdentity of listLocalIdentities()) {
+    removeLocalAccount(localIdentity);
+}
+```
+
+**Warning:** This operation does not actually unregister any biometric passkeys from the device; that can only be done manually by the user, through the device's system settings. Ideally, your application should inform the user to this effect, so their device isn't left cluttered with unused, unwanted passkeys.
+
+Again, this action cannot be undone, so be careful.
 
 ## Re-building `dist/*`
 
