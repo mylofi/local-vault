@@ -24,9 +24,13 @@ The cryptographic encryption/decryption key is furthermore protected locally in 
 **Local Vault** ships with these five adapters, for choosing where/how on the client to store the encrypted vault data:
 
 * `idb`: [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
+
 * `local-storage`: [Web Storage `localStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
+
 * `session-storage`: [Web Storage `sessionStorage`](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage)
+
 * `cookie`: [Web cookies](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/cookies)
+
 * `OPFS`: [Origin Private File System](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system), specifically [virtual origin filesystem](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/getDirectory)
 
 Each of these client-side storage mechanisms has its own pros/cons, so choice should be made carefully.
@@ -126,7 +130,62 @@ else {
 
 ## Creating A Local Vault
 
-// TODO
+A "local vault" is a JS object (JSON compatible), with the following three properties:
+
+* `accountID` string, holding the ID of the "local account" attached to one or more device passkeys, which themselves hold the encryption/decryption cryptographic key
+
+* `rpID` string, holding the "ID" of the "relying party", which for web applications should almost always be the fully-qualified hostname of the webapp
+
+* `data` string, holding the encrypted data in base64 encoding
+
+This vault object is stored in the [client storage mechanism](#client-side-storage-adapters) you choose, either directly (for IndexedDB) or as a JSON serialized string.
+
+That vault object is distinct from the vault-instance that you interact with in code. The vault-instance is a simple API (`get()`, `set()`, etc) for managing key-value style data access. Encryption and key-management is all handled automatically while interacting with the vault-instance.
+
+To setup a new vault-instance, use the `connect()` method:
+
+```js
+import { connect } from "..";
+
+// new vault-instance
+var vault = await connect({
+    storageType: "idb",
+    addNewVault: true,
+    keyOptions: {
+        username: "passkey-user",
+        displayName: "Passkey User",
+    },
+});
+
+vault.id;               // ".." (auto-generated string)
+vault.storageType;      // "idb"
+```
+
+The `storageType` is required on every `connect()` call. You'll likely do all your vault storage in *one* storage mechanism, so this is probably a fixed value you configure once in your app code -- rather than being an option the user chooses, for example.
+
+**Note:** The `username` / `displayName` values are only passed along to the biometric passkey, and are only used as meta-data for such. The device will often use one or both values in its prompt dialogs, so these values should either be something the user has picked, or at least be something the user will recognize and trust. Also, there may very well be multiple passkeys associated with the same local account, so the username/display-name should probably be differentiated to help the users know which passkey they're authenticating with.
+
+Generally, you'll probably save the auto-generated `vault.id` value to use in subsequent reconnections. To reconnect to an existing vault, use `connect()` again:
+
+```js
+var vault = await connect({
+   storageType: "idb",
+   vaultID: "..",           // existing vault ID
+});
+```
+
+### Discoverable Vaults
+
+Saving the `vault.id` to use later does create a bit of a chicken-and-the-egg problem, because then you have to separately choose which client-side storage you want to persist that value in, and manage it appropriately. The value may even be saved at first but lost later.
+
+So you can instead use "discoverable" mode to detect which vault to use, based on which passkey the user chooses to authenticate with:
+
+```js
+var vault = await connect({
+    storageType: "idb",
+    discoverVault: true,
+})
+```
 
 ## Re-building `dist/*`
 
