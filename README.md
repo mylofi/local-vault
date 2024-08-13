@@ -37,6 +37,18 @@ Each of these client-side storage mechanisms has its own pros/cons, so choice sh
 
 However, IndexedDB (`idb` adapter) is the most robust and flexible option, and should generally be considered the best default.
 
+### Enabling Adapters
+
+To load a storage mechanism's adapter (e.g., `idb` for IndexedDB):
+
+```js
+import "@lo-fi/local-vault/adapter/idb";
+
+import { connect } from "@lo-fi/local-vault";
+```
+
+You can load all five adapters, or only one. But you must have at least one adapter defined, and calls to `connect()` must always specify a storage-type that matches one of the loaded adapters.
+
 ### Storage Limitations
 
 [Client-side storage is notoriously volatile](https://web.dev/articles/storage-for-the-web). However, this library allows you to request the user's device to [treat client-side storage as *persistent*](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist):
@@ -147,6 +159,7 @@ The local vault object described previously is distinct from the vault-instance 
 To setup a new vault-instance, use the `connect()` method:
 
 ```js
+import "@lo-fi/local-vault/adapter-idb";
 import { connect } from "..";
 
 // new vault-instance
@@ -222,6 +235,70 @@ for (let localIdentity of listLocalIdentities()) {
 **Warning:** This operation does not actually unregister any biometric passkeys from the device; that can only be done manually by the user, through the device's system settings. Ideally, your application should inform the user to this effect, so their device isn't left cluttered with unused, unwanted passkeys.
 
 Again, this action cannot be undone, so be careful.
+
+## Vault Instance API
+
+The primary interaction with a vault is through its vault instance. For example:
+
+```js
+import { connect } from "..";
+
+var vault = await connect({
+    storageType: "idb",
+    addNewVault: true,
+});
+
+await vault.set("name","Kyle Simpson");
+// true
+
+await vault.has("name");
+// true
+
+await vault.set("info",{ nickname: "getify", age: 44 });
+// true
+
+await vault.entries();
+// [
+//    [ "name", "Kyle Simpson" ],
+//    [ "info", { nickname: "getify", age: 44 } ]
+// ]
+
+// synchronous, no need for `await`!
+vault.lock();
+// true
+
+// will prompt user for re-authentication
+// before removing the 'name' entry
+await vault.remove("name");
+// true
+
+await vault.keys();
+// [ "info" ]
+```
+
+A vault instance has the following methods:
+
+* `has(key)` (async): checks if the key-value store has the specified property registered
+
+* `get(key)` (async): retrieves the value associated with the specified key (`undefined` is absent)
+
+* `set(key,value)` (async): adds or updates the value at a specified key; setting a value to `undefined` (not `null`!) is treated as a `remove()` call, as encryption of the key-value store uses JSON serialization, which discards `undefined` values in object property locations.
+
+* `remove(key)` (async): removes a key from the key-value store; same as `set()` with `undefined` as the value.
+
+* `clear()` (async): completely removes the entire vault entry from the storage mechanism; the vault instance can still be used, and any subsequent calls will simply re-initialize the vault with empty data.
+
+* `lock()` (sync): removes the vault's lock-key from the internal time-limited cache, such that the next operation against the vault will require a re-authentication with a passkey; akin to "logging out" in traditional systems design.
+
+* `addPasskey({ username, displayName })` (async): add a new passkey to the vault's associated local passkey account (copying the existing lock-key into the new passkey)
+
+* `resetLockKey({ username, displayName })` (async): regenerate a new vault lock-key, as well as a new passkey to hold this lock-key; discards references to any previous passkeys in the local account
+
+* `keys()` (async): returns an array of all keys in the key-value store
+
+* `entries()` (async): returns an array of all `[ key, value ]` tuples, representing all entries in the key-value store
+
+**Note:** All of these methods, except `lock()`, are asynchronous (promise-returning), because they all potentially require passkey re-authentication if the vault's lock-key is not fresh in the recently-used cache.
 
 ## Re-building `dist/*`
 
