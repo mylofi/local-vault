@@ -27,10 +27,18 @@ function read(vaultID,vaultInfo) {
 }
 
 function write(vaultID,vaultInfo,vaultData) {
-	window.sessionStorage.setItem(
-		`local-vault-${vaultID}`,
-		JSON.stringify({ ...vaultInfo, data: vaultData, })
-	);
+	try {
+		window.sessionStorage.setItem(
+			`local-vault-${vaultID}`,
+			JSON.stringify({ ...vaultInfo, data: vaultData, })
+		);
+	}
+	catch (err) {
+		if (err.name == "QuotaExceededError") {
+			throw new Error("Local-storage is full, please request more storage space.",{ cause: err, });
+		}
+		throw err;
+	}
 }
 
 function find(search) {

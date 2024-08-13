@@ -28,7 +28,15 @@ async function read(vaultID,vaultInfo) {
 }
 
 function write(vaultID,vaultInfo,vaultData) {
-	return writeFile(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+	try {
+		return writeFile(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+	}
+	catch (err) {
+		if (err.name == "QuotaExceededError") {
+			throw new Error("Local-storage is full, please request more storage space.",{ cause: err, });
+		}
+		throw err;
+	}
 }
 
 async function find(search) {

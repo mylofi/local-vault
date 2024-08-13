@@ -33,7 +33,15 @@ async function read(vaultID,vaultInfo) {
 }
 
 async function write(vaultID,vaultInfo,vaultData) {
-	return idbSet(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+	try {
+		return idbSet(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+	}
+	catch (err) {
+		if (err.name == "QuotaExceededError") {
+			throw new Error("Local-storage is full, please request more storage space.",{ cause: err, });
+		}
+		throw err;
+	}
 }
 
 async function find(search) {
