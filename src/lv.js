@@ -225,6 +225,10 @@ async function get(name) {
 }
 
 async function set(name,val) {
+	if (val === undefined) {
+		return remove(name);
+	}
+
 	var { storageType, vaultID, vaultEntry, vaultLockKey, } = await openVault(this);
 	vaultEntry.data[name] = val;
 	await adapters[storageType].write(
@@ -264,6 +268,7 @@ function lock() {
 		let vaultEntry = vaultEntryCache.get(vault);
 		vaultEntryCache.delete(vault);
 		clearLockKeyCache(vaultEntry.accountID);
+		return true;
 	}
 	else {
 		throw new Error("Not a currently unlocked vault");
