@@ -43,7 +43,7 @@ async function main() {
 	// patch import reference in test.js to point to dist/
 	var testJSPath = path.join(BUILD_DIR,"test.js");
 	var testJSContents = await fsp.readFile(testJSPath,{ encoding: "utf8", });
-	testJSContents = testJSContents.replace(/(from "local-vault\/)src"/,"$1dist\"");
+	testJSContents = testJSContents.replace(/(import[^;]+"local-vault\/)src([^"]*)"/g,"$1dist$2\"");
 	await fsp.writeFile(testJSPath,testJSContents,{ encoding: "utf8", });
 
 	// copy dist/* files
