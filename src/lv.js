@@ -6,6 +6,7 @@ import {
 	lockData,
 	unlockData,
 	listLocalIdentities,
+	removeLocalAccount,
 	clearLockKeyCache,
 } from "@lo-fi/local-data-lock";
 
@@ -21,8 +22,10 @@ var vaultEntryCache = new WeakMap();
 // ***********************
 
 export {
-	// re-export Local-Data-Lock helper utilities:
+	// re-export Local-Data-Lock members:
 	supportsWebAuthn,
+	listLocalIdentities,
+	removeLocalAccount,
 	toBase64String,
 	fromBase64String,
 
@@ -33,8 +36,10 @@ export {
 	keepStorage,
 };
 var publicAPI = {
-	// re-export WebAuthn-Local-Client helper utilities:
+	// re-export Local-Data-Lock members:
 	supportsWebAuthn,
+	listLocalIdentities,
+	removeLocalAccount,
 	toBase64String,
 	fromBase64String,
 
@@ -206,6 +211,7 @@ async function removeAll() {
 	for (let [ storageType, adapter ] of Object.entries(adapters)) {
 		try { await adapter.clear(); } catch (err) {}
 	}
+	return true;
 }
 
 async function has(name) {
@@ -327,14 +333,18 @@ async function openVault(vault) {
 	) {
 		let { storageType, id: vaultID, } = vault;
 		if (adapters[storageType] != null) {
+			// always gets a vault entry, even if
+			// it's just a newly initialized entry
 			let vaultEntry = await getVaultEntry(storageType,vaultID);
-			// note: even if the local vault cache is still present
+
+			// even if the local vault cache is still present
 			// and unlocked, retrieve the lock-key to ensure that
 			// if its caching has expired, the user is re-prompted
 			let vaultLockKey = await getLockKey({
 				localIdentity: vaultEntry.accountID,
 				relyingPartyID: vaultEntry.rpID,
 			});
+
 			unlockVaultEntry(vaultEntry,vaultLockKey);
 			return { storageType, vaultID, vaultEntry, vaultLockKey, };
 		}
@@ -351,6 +361,10 @@ async function getVaultEntry(storageType,vaultID) {
 	var vaultEntry = (
 		vaultEntryCache.has(vaults[vaultID]) ?
 			vaultEntryCache.get(vaults[vaultID]) :
+
+			// note: read() from adapter always works,
+			// even if it just auto-initializes a new
+			// empty vault entry
 			await adapters[storageType].read(vaultID)
 	);
 	vaultEntryCache.set(vaults[vaultID],vaultEntry);
