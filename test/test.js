@@ -1,13 +1,18 @@
 // note: these module specifiers come from the import-map
 //    in index.html; swap "src" for "dist" here to test
 //    against the dist/* files
-import { connect, removeAll, } from "local-vault/src";
-import { clearLockKeyCache, } from "@lo-fi/local-data-lock";
 import "local-vault/src/adapter-local-storage";
 import "local-vault/src/adapter-session-storage";
 import "local-vault/src/adapter-idb";
 import "local-vault/src/adapter-opfs";
 import "local-vault/src/adapter-cookie";
+import {
+	connect,
+	removeAll,
+	listLocalIdentities,
+	removeLocalAccount,
+} from "local-vault/src";
+import { clearLockKeyCache, } from "@lo-fi/local-data-lock";
 
 // simple helper util for showing a spinner
 // (during slower passkey operations)
@@ -369,7 +374,9 @@ async function removeAllVaults() {
 	if (confirmResult.isConfirmed) {
 		removeAll();
 		clearLockKeyCache();
-		window.localStorage.removeItem("local-identities");
+		for (let localIdentity of listLocalIdentities()) {
+			removeLocalAccount(localIdentity);
+		}
 		currentVault = null;
 		updateElements();
 		showToast("All local vaults and passkey accounts removed.");
