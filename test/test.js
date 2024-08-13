@@ -9,6 +9,10 @@ import "local-vault/src/adapter-idb";
 import "local-vault/src/adapter-opfs";
 import "local-vault/src/adapter-cookie";
 
+// simple helper util for showing a spinner
+// (during slower passkey operations)
+import { startSpinner, stopSpinner, } from "./spinner.js";
+
 
 // ***********************
 
@@ -302,6 +306,7 @@ async function setupVault() {
 	if (username == null || displayName == null) return;
 
 	try {
+		startSpinner();
 		currentVault = await connect({
 			addNewVault: true,
 			storageType,
@@ -313,10 +318,12 @@ async function setupVault() {
 			},
 		});
 		updateElements();
+		stopSpinner();
 		return showVaultContents();
 	}
 	catch (err) {
 		logError(err);
+		stopSpinner();
 		showError("Setting up vault failed.");
 	}
 }
@@ -326,6 +333,7 @@ async function detectVault() {
 	if (storageType == null) return;
 
 	try {
+		startSpinner();
 		currentVault = await connect({
 			storageType,
 			discoverVault: true,
@@ -334,10 +342,12 @@ async function detectVault() {
 			},
 		});
 		updateElements();
+		stopSpinner();
 		return showVaultContents();
 	}
 	catch (err) {
 		logError(err);
+		stopSpinner();
 		showError("Detecting vault with passkey authentication failed.");
 	}
 }
@@ -382,6 +392,7 @@ async function openVault() {
 	if (storageType == null || vaultID == null) return;
 
 	try {
+		startSpinner();
 		currentVault = await connect({
 			storageType,
 			vaultID,
@@ -390,10 +401,12 @@ async function openVault() {
 			},
 		});
 		updateElements();
+		stopSpinner();
 		return showVaultContents();
 	}
 	catch (err) {
 		logError(err);
+		stopSpinner();
 		showError("Opening vault via passkey failed.");
 	}
 }
@@ -421,10 +434,13 @@ async function addPasskeyToVault() {
 		if (username == null || displayName == null) return;
 
 		try {
+			startSpinner();
 			await currentVault.addPasskey({ username, displayName, });
+			stopSpinner();
 		}
 		catch (err) {
 			logError(err);
+			stopSpinner();
 			showError("Adding passkey to vault failed.");
 		}
 	}
@@ -453,15 +469,18 @@ async function resetVault() {
 			if (username == null || displayName == null) return;
 
 			try {
+				startSpinner();
 				await currentVault.resetLockKey({
 					username,
 					displayName,
 				});
+				stopSpinner();
 
 				showToast("Vault lock-key reset (and previous passkeys discarded).");
 			}
 			catch (err) {
 				logError(err);
+				stopSpinner();
 				showError("Resetting vault lock-key failed.");
 			}
 		}
@@ -482,7 +501,7 @@ async function showVaultContents() {
 			</p>
 			<p>
 				<label>
-					Name:
+					Key:
 					<input type="text" id="add-prop-name" class="swal2-input">
 				</label>
 			</p>

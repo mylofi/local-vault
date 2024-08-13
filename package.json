@@ -1,7 +1,7 @@
 {
 	"name": "@lo-fi/local-vault",
 	"description": "Store key-value data encrypted (biometric passkey protected), locally in the client",
-	"version": "0.0.0",
+	"version": "0.9.0",
 	"exports": {
 		".": "./dist/bundlers/lv.mjs",
 		"./adapter/local-storage": "./dist/bundlers/adapter.local-storage.js",
@@ -39,8 +39,10 @@
 		"url": "git+https://github.com/mylofi/local-vault.git"
 	},
 	"keywords": [
-		"local-first",
-		"encryption"
+		"auth",
+		"storage",
+		"encryption",
+		"local-first"
 	],
 	"bugs": {
 		"url": "https://github.com/mylofi/local-vault/issues",

@@ -22,27 +22,30 @@ ul li { margin: 0.7rem; }
 
 <hr>
 
-<p><strong>Note:</strong> these tests require a passkey-enabled device (TouchID, FaceID, etc); also, the data entered is saved (encrypted!) only in the local-storage on this device, which can be inspected via this browser's developer-tools.</p>
+<p><strong>Note:</strong> these tests require a passkey-enabled device (TouchID, FaceID, etc); also, the data entered is saved (encrypted!) only in the storage type selected, only on this device, which can always be inspected/audited via this browser's developer-tools.</p>
 
 <h2>Steps To Run Tests:</h2>
 <ol>
-	<li>Register a local account (providing a username and display-name for the first passkey on the account).</li>
-	<li>Register another local account (providing a different username and display name for the passkey on that second account).</li>
-	<li>Select one of the accounts from the drop-down list, and click the 'unlock account' button.</li>
-	<li>Type some text into the box, and click the 'save' button.</li>
-	<li>Click the 'lock account' button.</li>
-	<li>Click the 'detect (and unlock) account' button; you will be prompted to choose one of the passkeys for one of the registered local accounts.</li>
-	<li>Click 'add passkey' and provide yet another username and display-name for the additional passkey on the currently selected account.</li>
-	<li>Change the 'Passkey Keep-Alive' value to 1 minute, and click the 'set' button.</li>
-	<li>Wait at least 1 minute, then enter (or change) some text, and click 'save'; you will be prompted to re-authenticate a registered passkey.</li>
-	<li>While logged into both accounts, you will be able to switch between them (using the dropdown and the 'login to account' button), and update the text for each account and click 'save' button... all <strong>WITHOUT</strong> being re-prompted for any passkeys; once the 1 minute has expired, you'll be prompted for the passkey at the first interaction with each account.
-	<li>Click the 'reset account' button; you will be prompted to create a new passkey for the current account (previous passkeys will be discarded).</li>
+	<li>Click 'setup vault' to setup a local vault -- picking one of the storage types (such as "Local Storage"), generating or entering a vault ID (such as "lv1"), and providing a username and display-name (e.g., "user-1" and "User 1", respectively) for the first passkey on the account. <strong>Make sure to copy the vault ID to save for later use!</strong></li>
+	<li>Enter a couple of key/value entries to add to the vault, then edit one of the values, and delete the other.</li>
+	<li>Setup another local vault -- picking the same storage type (from step 1), but entering different vault ID, username, and display-name.</li>
+	<li>Add a distinct key/value entry to this vault, then close the vault dialog.</li>
+	<li>Setup a third local vault -- this time picking a different storage type (such as "IndexedDB") than the other two vaults, as well as different vault ID, username, and display-name.</li>
+	<li>Add another distinct key/value entry to this vault, then close the vault dialog.</li>
+	<li>Click 'lock vault'.</li>
+	<li>Click 'open vault', select the chosen storage type (from step 1), then enter the copied vault ID (from step 1). Notice you're <em>not</em> prompted for passkey authentication, because this vault hasn't yet been "locked" (aka, logged out), and its key is still in the cache. Close the dialog.</li>
+	<li>Click 'lock vault'.</li>
+	<li>Just like step 8, click 'open vault', select the chosen storage type (from step 1), and the vault ID (from step 1), and <em>this time</em> you're prompted to authenticate with the passkey. Close the dialog.</li>
+	<li>Click 'add passkey', and enter a different username and display-name. Authenticate with the new passkey.</li>
+	<li>Click 'detect (and open) vault', select the storage type (from step 1) -- but no need to enter the vault ID! -- and then authenticate with the newest passkey, thereby opening the vault dialog with the detected vault's entries displayed. Close the dialog.</li>
+	<li>Click 'reset vault', confirm the action, then enter a new username and display-name, and authenticate with the new passkey.</li>
+	<li>To verify the new vault lock-key works, click 'open vault' to see the vault's key-value entries. Close the dialog.</li>
 </ol>
 
 <p>When complete with testing:</p>
 
 <ol>
-	<li>Click the 'reset (remove all accounts)' button.</li>
+	<li>Click 'reset (remove all vaults/passkey accounts)', and confirm the action.</li>
 	<li>Use the device's system management settings to remove all the passkeys registered during testing.</li>
 </ol>
 
@@ -56,8 +59,6 @@ ul li { margin: 0.7rem; }
 <p>
 	<button type="button" id="open-vault-btn">open vault</button>
 	<button type="button" id="lock-vault-btn" disabled>lock vault</button>
-</p>
-<p>
 	<button type="button" id="add-passkey-btn" disabled>add passkey</button>
 	<button type="button" id="reset-vault-btn" disabled>reset lock-key</button>
 </p>
@@ -73,15 +74,15 @@ ul li { margin: 0.7rem; }
 		"local-vault/src/adapter-local-storage": "./src/adapter.local-storage.js",
 		"local-vault/src/adapter-session-storage": "./src/adapter.session-storage.js",
 		"local-vault/src/adapter-idb": "./src/adapter.idb.js",
-		"local-vault/src/adapter-opfs": "./src/adapter.opfs.js",
 		"local-vault/src/adapter-cookie": "./src/adapter.cookie.js",
+		"local-vault/src/adapter-opfs": "./src/adapter.opfs.js",
 
 		"local-vault/dist": "./dist/auto/ldl.js",
 		"local-vault/dist/adapter-local-storage": "./dist/auto/adapter.local-storage.js",
 		"local-vault/dist/adapter-session-storage": "./dist/auto/adapter.session-storage.js",
 		"local-vault/dist/adapter-idb": "./dist/auto/adapter.idb.js",
-		"local-vault/dist/adapter-opfs": "./dist/auto/adapter.opfs.js",
 		"local-vault/dist/adapter-cookie": "./dist/auto/adapter.cookie.js",
+		"local-vault/dist/adapter-opfs": "./dist/auto/adapter.opfs.js",
 
 		"idb-keyval": "./dist/auto/external/idb-keyval.js",
 		"@lo-fi/local-data-lock": "./dist/auto/external/@lo-fi/local-data-lock/ldl.js",
