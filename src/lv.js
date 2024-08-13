@@ -70,6 +70,7 @@ async function connect({
 	keyOptions: {
 		relyingPartyID = document.location.hostname,
 		relyingPartyName = "Local Vault",
+		localIdentity: newLocalIdentity,
 		...keyOptions
 	} = {},
 	addNewVault = false,
@@ -158,7 +159,7 @@ async function connect({
 						...keyOptions,
 						...(
 							addNewVault ?
-								{ addNewPasskey: true, } :
+								{ addNewPasskey: true, localIdentity: newLocalIdentity, } :
 								{ localIdentity: vaultEntry.accountID, }
 						),
 					}) :
@@ -256,7 +257,7 @@ function lock() {
 	) {
 		let vaultEntry = vaultEntryCache.get(vault);
 		vaultEntryCache.delete(vault);
-		clearLockKeyCache(vault.storageType,vaultEntry.accountID);
+		clearLockKeyCache(vaultEntry.accountID);
 	}
 	else {
 		throw new Error("Not a currently unlocked vault");

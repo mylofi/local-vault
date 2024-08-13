@@ -62,12 +62,18 @@ function clear(vaultID = null) {
 		window.sessionStorage.removeItem(`local-vault-${vaultID}`);
 	}
 	else {
-		// remove all local-vault entries
+		// collect all local-vault IDs
+		let localVaultIDs = [];
 		for (let i = 0; i < window.sessionStorage.length; i++) {
 			let storageEntryProp = window.sessionStorage.key(i);
 			if (/^local-vault-[^]+$/.test(storageEntryProp)) {
-				window.sessionStorage.removeItem(storageEntryProp);
+				localVaultIDs.push(storageEntryProp);
 			}
+		}
+
+		// remove all local-vault entries
+		for (let localVaultID of localVaultIDs) {
+			window.sessionStorage.removeItem(localVaultID);
 		}
 	}
 }
