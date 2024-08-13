@@ -222,14 +222,16 @@ This is *very* dangerous (for user's data viability), and cannot be undone. Be c
 
 ----
 
-To also remove all local passkey accounts (from `localStorage`):
+To also remove all local passkey accounts (from `localStorage`), and clear the lock-key cache:
 
 ```js
 import { listLocalIdentities, removeLocalAccount } from "..";
+import { clearLockKeyCache } from "@lo-fi/local-data-lock";
 
 for (let localIdentity of listLocalIdentities()) {
     removeLocalAccount(localIdentity);
 }
+clearLockKeyCache();
 ```
 
 **Warning:** This operation does not actually unregister any biometric passkeys from the device; that can only be done manually by the user, through the device's system settings. Ideally, your application should inform the user to this effect, so their device isn't left cluttered with unused, unwanted passkeys.
