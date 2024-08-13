@@ -17,9 +17,9 @@ import { startSpinner, stopSpinner, } from "./spinner.js";
 // ***********************
 
 const storageTypes = {
+	"idb": "IndexedDB",
 	"local-storage": "Local Storage",
 	"session-storage": "Session Storage",
-	"idb": "IndexedDB",
 	"cookie": "Cookies",
 	"opfs": "Origin Private FS (Chrome/Firefox)",
 };
