@@ -8,6 +8,8 @@ Then copy over all `dist/auto/*` contents, as-is:
 
     **Note:** this is *not* the same as `dist/bundlers/lv.mjs`, which is only intended [for web application projects WITH a bundler](BUNDLERS.md)
 
+* `dist/auto/adapter.*.js`
+
 * `dist/auto/external/*` (preserve the whole `external/` sub-directory):
     - `@lo-fi/local-data-lock/ldl.js`,
     - `@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js`

@@ -16,6 +16,8 @@ The plugins for Astro, Vite, and Webpack are included in the `bundler-plugins/` 
 
     **Note:** this is *not* the same as `dist/auto/lv.js`, which is only intended [for web application projects WITHOUT a bundler](NON-BUNDLERS.md)
 
+* `dist/bundlers/adapter.*.mjs`
+
 * `node_modules/@lo-fi/local-data-lock/dist/bundlers/ldl.mjs`
 
 * `node_modules/@lo-fi/webauthn-local-client/dist/bundlers/walc.mjs`
