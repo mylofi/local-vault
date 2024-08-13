@@ -36,9 +36,9 @@ ul li { margin: 0.7rem; }
 	<li>Click 'open vault', select the chosen storage type (from step 1), then enter the copied vault ID (from step 1). Notice you're <em>not</em> prompted for passkey authentication, because this vault hasn't yet been "locked" (aka, logged out), and its key is still in the cache. Close the dialog.</li>
 	<li>Click 'lock vault'.</li>
 	<li>Just like step 8, click 'open vault', select the chosen storage type (from step 1), and the vault ID (from step 1), and <em>this time</em> you're prompted to authenticate with the passkey. Close the dialog.</li>
-	<li>Click 'add passkey', and enter a different username and display-name. Authenticate with the new passkey.</li>
+	<li>Click 'add vault passkey', and enter a different username and display-name. Authenticate with the new passkey.</li>
 	<li>Click 'detect (and open) vault', select the storage type (from step 1) -- but no need to enter the vault ID! -- and then authenticate with the newest passkey, thereby opening the vault dialog with the detected vault's entries displayed. Close the dialog.</li>
-	<li>Click 'reset vault', confirm the action, then enter a new username and display-name, and authenticate with the new passkey.</li>
+	<li>Click 'reset vault lock-key', confirm the action, then enter a new username and display-name, and authenticate with the new passkey.</li>
 	<li>To verify the new vault lock-key works, click 'open vault' to see the vault's key-value entries. Close the dialog.</li>
 </ol>
 
@@ -59,8 +59,8 @@ ul li { margin: 0.7rem; }
 <p>
 	<button type="button" id="open-vault-btn">open vault</button>
 	<button type="button" id="lock-vault-btn" disabled>lock vault</button>
-	<button type="button" id="add-passkey-btn" disabled>add passkey</button>
-	<button type="button" id="reset-vault-btn" disabled>reset lock-key</button>
+	<button type="button" id="add-passkey-btn" disabled>add vault passkey</button>
+	<button type="button" id="reset-vault-btn" disabled>reset vault lock-key</button>
 </p>
 
 </main>
