@@ -5,6 +5,7 @@ import {
 	getLockKey,
 	lockData,
 	unlockData,
+	generateEntropy,
 	listLocalIdentities,
 	removeLocalAccount,
 	clearLockKeyCache,
@@ -113,7 +114,14 @@ async function connect({
 
 			throw new Error(`No matching vault found in storage ('${storageType}') for presented passkey`);
 		}
-		else if (vaultID != null) {
+		else if (vaultID != null || addNewVault) {
+			// need to generate new random vault ID?
+			if (addNewVault && vaultID == null) {
+				vaultID = (
+					toBase64String(generateEntropy(12))
+					.replace(/[^a-zA-Z0-9]+/g,"")
+				);
+			}
 			// need to define vault instance (public API)?
 			if (!(vaultID in vaults)) {
 				vaults[vaultID] = {
