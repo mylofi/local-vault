@@ -33,6 +33,11 @@ function LV() {
 			if (id == "@lo-fi/local-vault") {
 				return fs.readFileSync(lvSrcPath,{ encoding: "utf8", });
 			}
+			else if (/^@lo-fi\/local-vault\/adapter\/[^\/]+$/.test(id)) {
+				let bundlersDir = path.dirname(lvSrcPath);
+				let [ , adapterName, ] = id.match(/^@lo-fi\/local-vault\/adapter\/([^\/]+)$/) || [];
+				return fs.readFileSync(path.join(bundlersDir,`adapter.${adapterName}.mjs`),{ encoding: "utf8" });
+			}
 			return ldlVite.load(id,opts);
 		},
 	};
