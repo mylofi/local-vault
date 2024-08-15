@@ -3,13 +3,23 @@
 [![npm Module](https://badge.fury.io/js/@lo-fi%2Flocal-vault.svg)](https://www.npmjs.org/package/@lo-fi/local-vault)
 [![License](https://img.shields.io/badge/license-MIT-a1356a)](LICENSE.txt)
 
-**Local Vault** provides a client-side, key-value storage API abstraction, with automatic encryption/decryption secured by biometric passkeys.
+**Local Vault** provides a client-side, key-value storage API abstraction, with automatic encryption/decryption secured by biometric passkeys -- no servers required!
+
+```js
+var vault = await connect({ .. });
+
+await vault.set("Hello","World!");       // true
+
+await vault.get("Hello");               // "World!"
+```
 
 ----
 
 [Library Tests (Demo)](https://mylofi.github.io/local-vault/)
 
 ----
+
+## Overview
 
 A *local vault* instance is a simple key-value store (`get()`, `set()`, etc), backed by [your choice among various client-side storage mechanisms](#client-side-storage-adapters) (`localStorage` / `sessionStorage`, IndexedDB, cookies, and OPFS).
 
@@ -146,7 +156,7 @@ A "local vault" is a JS object (JSON compatible), with the following three prope
 
 * `accountID` string, holding the ID of the "local account" attached to one or more device passkeys, which themselves hold the encryption/decryption cryptographic key
 
-* `rpID` string, holding the "ID" of the "relying party", which for web applications should almost always be the fully-qualified hostname of the webapp
+* `rpID` string, holding the "ID" of the "relying party", which for web applications should almost always be the fully-qualified hostname (i.e., `document.location.hostname`) of the webapp
 
 * `data` string, holding the encrypted data in base64 encoding
 
@@ -178,18 +188,40 @@ vault.storageType;      // "idb"
 
 The `storageType` is required on every `connect()` call. You'll likely do all your vault storage in *one* storage mechanism, so this is probably a fixed value you configure once in your app code -- rather than being an option the user chooses, for example.
 
-**Note:** The `username` / `displayName` values are only passed along to the biometric passkey, and are only used as meta-data for such. The device will often use one or both values in its prompt dialogs, so these values should either be something the user has picked, or at least be something the user will recognize and trust. Also, there may very well be multiple passkeys associated with the same local account, so the username/display-name should probably be differentiated to help the users know which passkey they're authenticating with.
+Any options set under `keyOptions` are passed along to the underlying [**Local Data Lock** library's `getLockKey()` method](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#registering-a-local-account).
 
-Generally, you'll probably save the auto-generated `vault.id` value to use in subsequent reconnections. To reconnect to an existing vault, use `connect()` again:
+**Note:** The `username` / `displayName` key-options illustrated above are not strictly required, but are strongly recommended; they're only passed along to the biometric passkey, as meta-data for such. The device will often use one or both values in its prompt dialogs, so these values should either be something the user has picked, or at least be something the user will recognize and trust. Also, there may very well be multiple passkeys associated with the same local account, so the username/display-name should be differentiated to help the users know which passkey they're authenticating with.
+
+### Manually Setting Lock-Key
+
+To manually set a new vault's lock-key -- for example, when importing a lock-key from another device:
+
+```js
+var vault = await connect({
+    storageType: "idb",
+    addNewVault: true,
+    keyOptions: {
+        // created by another vault instance, even on
+        // another device
+        useLockKey: existingLockKey
+    }
+});
+```
+
+**Warning:** Be judicious with this feature. If for example you're synchronizing keypair identities between a user's multiple devices, this functionality can be useful. But otherwise, it's better (more secure!) to let **Local Vault** automatically generate and internally manage its cryptographic keypair.
+
+## Reconnecting a Vault
+
+You may save the auto-generated `vault.id` value from a `connect()` call, to use in subsequent reconnections, again using `connect()`:
 
 ```js
 var vault = await connect({
    storageType: "idb",
-   vaultID: ".."            // existing vault ID
+   vaultID: existingVaultID     // saved from previous connect() call
 });
 ```
 
-**Note:** If the vault's lock-key (biometric passkey protected) is still in the recent-access cache (default timeout: 30 minutes), the `connect()` call will complete silently. Otherwise, the user will be prompted by the device to re-authenticate with their passkey (to access the lock-key) before unlocking the vault.
+**Note:** If the vault's lock-key (biometric passkey protected) is still in the recent-access cache (default timeout: 30 minutes), a `connect()` call will complete silently. Otherwise, the user will be prompted by the device to re-authenticate with their passkey (to access the lock-key) before unlocking the vault.
 
 ### Discoverable Vaults
 
@@ -206,7 +238,7 @@ var vault = await connect({
 
 Discovery mode should only be used when you're sure the user has already setup a vault on this device. If a suitable passkey is not authenticated with, and matching vault is not found, a discovery mode `connect()` call will fail with an exception.
 
-**Note:** Discovery mode will *always* prompt the user for passkey authentication. This might mean a user would have to reauthenticate on each page load, for example. As an affordance to reduce user friction, you might choose to store the vault-ID in `sessionStorage`, along with a timestamp. Even after page refreshes, you might keep using this vault-ID **without** discovery mode. But after a certain amount of time since last authentication has passed, you might choose to push for reauthentication by using discovery mode. Alternatively, you might call `lock()` on the vault-instance after a certain period of time, thereby ensuring the next vault operation will re-prompt the user for passkey authentication.
+**Note:** Discovery mode will *always* prompt the user for passkey authentication. This might mean a user would have to reauthenticate on each page load, for example. As an affordance to reduce user friction, you might choose to store the vault-ID in `sessionStorage`, along with a timestamp. Even after page refreshes, you might keep using this vault-ID **without** discovery mode. But after a certain amount of time since last authentication has passed, you might choose to push for reauthentication by discarding the known vault-ID and using discovery mode. Alternatively, you might call `lock()` on the vault-instance after a certain period of time, thereby ensuring the next vault operation will re-prompt the user for passkey authentication.
 
 ## Removing All Local Data
 
@@ -247,7 +279,7 @@ import { connect } from "..";
 
 var vault = await connect({
     storageType: "idb",
-    addNewVault: true,
+    addNewVault: true
 });
 
 await vault.set("name","Kyle Simpson");
@@ -278,7 +310,13 @@ await vault.keys();
 // [ "info" ]
 ```
 
-A vault instance has the following methods:
+A vault instance has the following properties:
+
+* `id` (string): the unique (to this device) vault ID
+
+* `storageType` (string): the type of storage mechanism chosen to back this vault
+
+A vault instance also has the following methods:
 
 * `has(key)` (async): checks if the key-value store has the specified property registered
 
@@ -292,15 +330,23 @@ A vault instance has the following methods:
 
 * `lock()` (sync): removes the vault's lock-key from the internal time-limited cache, such that the next operation against the vault will require a re-authentication with a passkey; akin to "logging out" in traditional systems design.
 
-* `addPasskey({ username, displayName })` (async): add a new passkey to the vault's associated local passkey account (copying the existing lock-key into the new passkey)
+* `addPasskey({ ...keyOptions })` (async): add a new passkey to the vault's associated local passkey account
 
-* `resetLockKey({ username, displayName })` (async): regenerate a new vault lock-key, as well as a new passkey to hold this lock-key; discards references to any previous passkeys in the local account
+* `resetLockKey({ ...keyOptions })` (async): regenerate a new vault lock-key, as well as a new passkey to hold this lock-key; discards references to any previous passkeys in the local account.
+
+    A `useLockKey` key-option may be passed, to manually set the lock-key to reset the vault with; this may be useful if importing a key from another device.
 
 * `keys()` (async): returns an array of all keys in the key-value store
 
 * `entries()` (async): returns an array of all `[ key, value ]` tuples, representing all entries in the key-value store
 
-**Note:** All of these methods, except `lock()`, are asynchronous (promise-returning), because they all potentially require passkey re-authentication if the vault's lock-key is not fresh in the recently-used cache.
+* `__exportLockKey({ risky: "this is unsafe" })` (async): call this method (with the required `risky` argument as shown) to reveal the underlying lock-key for a vault; needs either an unlocked vault (freshly-available cached passkey authentication), or will prompt the user for re-authentication to unlock.
+
+    **Warning:** You should only use this method if you're intentionally circumventing the typical security protections of this library. For example: a valid use-case is for synchronizing a lock-key to another of the user's devices.
+
+    The lock-key object should be **treated opaquely**, meaning that you don't rely on its structure, don't make any changes to it, etc. See ["Lock Key Value Format"](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#lock-key-value-format) for information about serializing/deserializing the value for storage, transmission, etc.
+
+**Note:** All of these methods, except `lock()`, are asynchronous (promise-returning), because they all potentially require passkey re-authentication if the vault's lock-key is not freshly available in the internal recently-used cache.
 
 ## Re-building `dist/*`
 
