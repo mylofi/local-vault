@@ -88,9 +88,9 @@ async function connect({
 
 			// attempt to discover lock-key from chosen passkey
 			let vaultLockKey = await getLockKey({
+				...keyOptions,
 				relyingPartyID,
 				relyingPartyName,
-				...keyOptions,
 			});
 
 			// lock-key discovered?
@@ -135,6 +135,7 @@ async function connect({
 					resetLockKey,
 					keys,
 					entries,
+					__exportLockKey,
 				};
 				for (let [ name, fn ] of Object.entries(vaults[vaultID])) {
 					vaults[vaultID][name] = fn.bind(vaults[vaultID]);
@@ -165,11 +166,11 @@ async function connect({
 			let vaultLockKey = (
 				(addNewVault || vaultEntry.accountID != null) ?
 					await getLockKey({
+						...keyOptions,
 						relyingPartyID: (
 							vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
 						),
 						relyingPartyName,
-						...keyOptions,
 						...(
 							addNewVault ?
 								{ addNewPasskey: true, localIdentity: newLocalIdentity, } :
@@ -283,16 +284,22 @@ function lock() {
 	}
 }
 
-async function addPasskey({ username, displayName, } = {}) {
+async function addPasskey({
+	localIdentity,
+	relyingPartyID = document.location.hostname,
+	relyingPartyName = "Local Vault",
+	...keyOptions
+} = {}) {
 	var { vaultEntry, } = await openVault(this);
 
 	try {
 		await getLockKey({
+			...keyOptions,
 			localIdentity: vaultEntry.accountID,
-			username,
-			displayName,
-			relyingPartyID: vaultEntry.rpID,
-			relyingPartyName: "Local Vault",
+			relyingPartyID: (
+				vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
+			),
+			relyingPartyName,
 			addNewPasskey: true,
 		});
 		return true;
@@ -302,23 +309,29 @@ async function addPasskey({ username, displayName, } = {}) {
 	}
 }
 
-async function resetLockKey({ username, displayName, } = {}) {
-	var { storageType, vaultID, vaultEntry, vaultLockKey: oldVaultLockKey } = await openVault(this);
+async function resetLockKey({
+	localIdentity,
+	relyingPartyID = document.location.hostname,
+	relyingPartyName = "Local Vault",
+	...keyOptions
+} = {}) {
+	var { storageType, vaultID, vaultEntry, } = await openVault(this);
 
 	try {
-		let newVaultLockKey = await getLockKey({
+		let vaultLockKey = await getLockKey({
+			...keyOptions,
 			localIdentity: vaultEntry.accountID,
-			username,
-			displayName,
-			relyingPartyID: vaultEntry.rpID,
-			relyingPartyName: "Local Vault",
+			relyingPartyID: (
+				vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
+			),
+			relyingPartyName,
 			resetLockKey: true,
 		});
 
 		await adapters[storageType].write(
 			vaultID,
 			vaultEntry,
-			lockData(vaultEntry.data,newVaultLockKey)
+			lockData(vaultEntry.data,vaultLockKey)
 		);
 
 		return true;
@@ -336,6 +349,16 @@ async function keys() {
 async function entries() {
 	var { vaultEntry, } = await openVault(this);
 	return Object.entries(vaultEntry.data);
+}
+
+async function __exportLockKey({ risky = false, } = {}) {
+	if (risky == "this is unsafe") {
+		let { vaultLockKey, } = await openVault(this);
+		return { ...vaultLockKey, };
+	}
+	else {
+		throw new Error("Must pass {risky:\"this is unsafe\"} argument, to acknowledge the risks of using this method");
+	}
 }
 
 async function openVault(vault) {
