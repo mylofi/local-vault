@@ -11,6 +11,7 @@ Then copy over all `dist/auto/*` contents, as-is:
 * `dist/auto/adapter.*.js`
 
 * `dist/auto/external/*` (preserve the whole `external/` sub-directory):
+    - `idb-keyval.js`
     - `@lo-fi/local-data-lock/ldl.js`,
     - `@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js`
     - `@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/external.js`
@@ -38,6 +39,8 @@ If your **non-bundled** browser app has an [Import Map](https://developer.mozill
 {
     "imports": {
         "local-vault": "/path/to/js-assets/local-vault/lv.js",
+
+        "idb-keyval": "/path/to/js-assets/local-vault/external/idb-keyval.js",
 
         "@lo-fi/local-data-lock": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/ldl.js",
 
