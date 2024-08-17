@@ -8,15 +8,15 @@ As such, this project provides plugins for Astro, Vite, and Webpack, to take car
 
 The plugins for Astro, Vite, and Webpack are included in the `bundler-plugins/` directory. They should handle all necessary steps to load the dependencies.
 
-**Note:** You should not need to manually copy any files out of the `dist/bundlers/` directory, as the plugins access the `local-vault` dependency (in `node_modules`) directly to pull the files needed. But for reference, the files these plugins access are:
+**Note:** You should not need to manually copy any files out of the `dist/bundlers/` directory, as the plugins access the dependencies in `node_modules` directly, to pull the files needed. But for reference, the files these plugins access are:
 
-* `dist/bundlers/lv.mjs`
+* `node_modules/@lo-fi/local-vault/dist/bundlers/lv.mjs`
 
     ESM library module that's suitable for bundling and `import`ing into your web app.
 
     **Note:** this is *not* the same as `dist/auto/lv.js`, which is only intended [for web application projects WITHOUT a bundler](NON-BUNDLERS.md)
 
-* `dist/bundlers/adapter.*.mjs`
+* `node_modules/@lo-fi/local-vault/dist/bundlers/adapter.*.mjs`
 
 * `node_modules/@lo-fi/local-data-lock/dist/bundlers/ldl.mjs`
 
@@ -164,7 +164,7 @@ This plugin copies the `node_modules/@lo-fi/webauthn-local-client/dist/bundlers/
 To import and use **local-vault** in a *bundled* browser app:
 
 ```js
-import { todo } from "@lo-fi/local-vault";
+import { connect } from "@lo-fi/local-vault";
 ```
 
 When `import`ed like this, Astro, Vite, Webpack should (via these plugins) properly find and bundle the `dist/bundlers/lv.mjs` ESM library module with the rest of your app code, hopefully without any further steps necessary.
