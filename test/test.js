@@ -93,7 +93,11 @@ async function promptVaultOptions(
 	var copyBtn;
 
 	var result = await Swal.fire({
-		title: "Vault Options",
+		title: (
+			newVaultRegistration ?
+				"New Vault Settings" :
+				"Vault Info"
+		),
 		html: `
 			<p>
 				<select id="storage-type" class="swal2-select">
@@ -295,6 +299,23 @@ async function promptAddPasskey() {
 	}
 }
 
+async function promptSetupTimeout() {
+	var confirmTimeout = await Swal.fire({
+		text: "Do you want to test cancellation, by limiting your next passkey authentication with a 5 sec timeout?",
+		icon: "question",
+		showConfirmButton: true,
+		confirmButtonText: "Yes, timeout!",
+		confirmButtonColor: "darkslateblue",
+		showCancelButton: true,
+		cancelButtonColor: "darkslategray",
+		cancelButtonText: "Skip timeout",
+		focusCancel: true,
+		allowOutsideClick: true,
+		allowEscapeKey: true,
+	});
+	return confirmTimeout.isConfirmed;
+}
+
 async function setupVault() {
 	var { storageType, vaultID, } = (
 		(await promptVaultOptions(
@@ -310,6 +331,9 @@ async function setupVault() {
 	} = (await promptAddPasskey()) || {};
 	if (username == null || displayName == null) return;
 
+	var setupTimeout = await promptSetupTimeout();
+	var { signal, intv } = setupTimeout ? createTimeoutToken() : {};
+
 	try {
 		startSpinner();
 		currentVault = await connect({
@@ -321,7 +345,9 @@ async function setupVault() {
 				username,
 				displayName,
 			},
+			signal,
 		});
+		if (intv != null) { clearTimeout(intv); }
 		updateElements();
 		stopSpinner();
 		return showVaultContents();
@@ -337,6 +363,9 @@ async function detectVault() {
 	var { storageType, } = (await promptVaultOptions()) || {};
 	if (storageType == null) return;
 
+	var setupTimeout = await promptSetupTimeout();
+	var { signal, intv } = setupTimeout ? createTimeoutToken() : {};
+
 	try {
 		startSpinner();
 		currentVault = await connect({
@@ -345,7 +374,9 @@ async function detectVault() {
 			keyOptions: {
 				relyingPartyName: "Local Vault Tests",
 			},
+			signal,
 		});
+		if (intv != null) { clearTimeout(intv); }
 		updateElements();
 		stopSpinner();
 		return showVaultContents();
@@ -398,6 +429,9 @@ async function openVault() {
 	);
 	if (storageType == null || vaultID == null) return;
 
+	var setupTimeout = ( currentVault == null ? await promptSetupTimeout() : false);
+	var { signal, intv } = setupTimeout ? createTimeoutToken() : {};
+
 	try {
 		startSpinner();
 		currentVault = await connect({
@@ -406,7 +440,9 @@ async function openVault() {
 			keyOptions: {
 				relyingPartyName: "Local Vault Tests",
 			},
+			signal,
 		});
+		if (intv != null) { clearTimeout(intv); }
 		updateElements();
 		stopSpinner();
 		return showVaultContents();
@@ -440,10 +476,17 @@ async function addPasskeyToVault() {
 		} = (await promptAddPasskey()) || {};
 		if (username == null || displayName == null) return;
 
+		let setupTimeout = await promptSetupTimeout();
+		let { signal, intv } = setupTimeout ? createTimeoutToken() : {};
+
 		try {
 			startSpinner();
-			await currentVault.addPasskey({ username, displayName, });
+			let added = await currentVault.addPasskey({ username, displayName, signal, });
+			if (intv != null) { clearTimeout(intv); }
 			stopSpinner();
+			if (added) {
+				showToast("New passkey added to vault.");
+			}
 		}
 		catch (err) {
 			logError(err);
@@ -702,4 +745,10 @@ function cancelEvent(evt) {
 		evt.stopPropagation();
 		evt.stopImmediatePropagation();
 	}
+}
+
+function createTimeoutToken() {
+	var ac = new AbortController();
+	var intv = setTimeout(() => ac.abort("Timeout!"),5000);
+	return { signal: ac.signal, intv, };
 }

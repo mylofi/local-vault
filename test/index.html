@@ -26,20 +26,22 @@ ul li { margin: 0.7rem; }
 
 <h2>Steps To Run Tests:</h2>
 <ol>
-	<li>Click 'setup vault' to setup a local vault -- picking one of the storage types (such as "Local Storage"), generating or entering a vault ID (such as "lv1"), and providing a username and display-name (e.g., "user-1" and "User 1", respectively) for the first passkey on the account. <strong>Make sure to copy the vault ID to save for later use!</strong></li>
+	<li>Click 'setup vault' to setup a local vault -- picking one of the storage types (such as "Local Storage"), generating or entering a vault ID (such as "lv1"), and providing a username and display-name (e.g., "user-1" and "User 1", respectively) for the first passkey on the account. <strong>Make sure to copy the vault ID to save for later use!</strong> But don't set a timeout.</li>
 	<li>Enter a couple of key/value entries to add to the vault, then edit one of the values, and delete the other.</li>
-	<li>Setup another local vault -- picking the same storage type (from step 1), but entering different vault ID, username, and display-name.</li>
-	<li>Add a distinct key/value entry to this vault, then close the vault dialog.</li>
-	<li>Setup a third local vault -- this time picking a different storage type (such as "IndexedDB") than the other two vaults, as well as different vault ID, username, and display-name.</li>
+	<li>Setup another local vault -- picking the same storage type (from step 1), but entering different vault ID, username, and display-name. But this time pick a timeout, and then let the passkey prompt dialog sit long enough until it cancels and closes.</li>
+	<li>Now, repeat the previous step but without the timeout, and complete the second vault setup.</li>
+	<li>Add a distinct key/value entry to this second vault, then close the vault dialog.</li>
+	<li>Setup a third local vault -- this time picking a different storage type (such as "IndexedDB") than the other two vaults, as well as different vault ID, username, and display-name. And this time, skip the timeout again.</li>
 	<li>Add another distinct key/value entry to this vault, then close the vault dialog.</li>
 	<li>Click 'lock vault'.</li>
-	<li>Click 'open vault', select the chosen storage type (from step 1), then enter the copied vault ID (from step 1). Notice you're <em>not</em> prompted for passkey authentication, because this vault hasn't yet been "locked" (aka, logged out), and its key is still in the cache. Close the dialog.</li>
+	<li>Click 'open vault', select the chosen storage type (from step 1), then enter the copied vault ID (from step 1), and skip the timeout. Notice you're <em>not</em> prompted for passkey authentication, because this vault hasn't yet been "locked" (aka, logged out), and its key is still in the cache. Close the vault dialog.</li>
 	<li>Click 'lock vault'.</li>
-	<li>Just like step 8, click 'open vault', select the chosen storage type (from step 1), and the vault ID (from step 1), and <em>this time</em> you're prompted to authenticate with the passkey. Close the dialog.</li>
+	<li>Just like step 9, click 'open vault', select the chosen storage type (from step 1), and the vault ID (from step 1), but now select the timeout. <em>This time</em> you're prompted to authenticate with the passkey, but let the dialog sit long enough until it cancels and closes.</li>
+	<li>Repeat step 9 again (skipping the timeout), and authenticate with your passkey. Close the vault dialog.</li>
 	<li>Click 'add vault passkey', and enter a different username and display-name. Authenticate with the new passkey.</li>
-	<li>Click 'detect (and open) vault', select the storage type (from step 1) -- but no need to enter the vault ID! -- and then authenticate with the newest passkey, thereby opening the vault dialog with the detected vault's entries displayed. Close the dialog.</li>
+	<li>Click 'detect (and open) vault', select the storage type (from step 1) -- but no need to enter the vault ID! -- and skip the timeout and authenticate with the newest passkey, thereby opening the vault dialog. Close the vault dialog.</li>
 	<li>Click 'reset vault lock-key', confirm the action, then enter a new username and display-name, and authenticate with the new passkey.</li>
-	<li>To verify the new vault lock-key works, click 'open vault' to see the vault's key-value entries. Close the dialog.</li>
+	<li>To verify the new vault lock-key works, click 'open vault' to see the vault's key-value entries. Close the vault dialog.</li>
 </ol>
 
 <p>When complete with testing:</p>

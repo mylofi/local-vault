@@ -81,6 +81,7 @@ async function connect({
 	} = {},
 	addNewVault = false,
 	discoverVault = false,
+	signal: cancelConnection,
 }) {
 	if (storageType in adapters) {
 		if (discoverVault) {
@@ -91,10 +92,14 @@ async function connect({
 				...keyOptions,
 				relyingPartyID,
 				relyingPartyName,
+				signal: cancelConnection,
 			});
 
 			// lock-key discovered?
-			if (localIdentities.includes(vaultLockKey.localIdentity)) {
+			if (
+				vaultLockKey != null &&
+				localIdentities.includes(vaultLockKey.localIdentity)
+			) {
 				// vault found that matches the local-key's account ID?
 				let [ discoveredVaultID, ] = await adapters[storageType].find({
 					accountID: vaultLockKey.localIdentity,
@@ -108,6 +113,7 @@ async function connect({
 							relyingPartyName,
 							...keyOptions,
 						},
+						signal: cancelConnection,
 					});
 				}
 			}
@@ -125,6 +131,8 @@ async function connect({
 			// need to define vault instance (public API)?
 			if (!(vaultID in vaults)) {
 				vaults[vaultID] = {
+					id: vaultID,
+					storageType,
 					has,
 					"get": get,
 					"set": set,
@@ -138,28 +146,19 @@ async function connect({
 					__exportLockKey,
 				};
 				for (let [ name, fn ] of Object.entries(vaults[vaultID])) {
-					vaults[vaultID][name] = fn.bind(vaults[vaultID]);
-				}
-				Object.defineProperties(
-					vaults[vaultID],
-					{
-						storageType: {
-							value: storageType,
-							writable: false,
-							configurable: false,
-							enumerable: true,
-						},
-						id: {
-							value: vaultID,
-							writable: false,
-							configurable: false,
-							enumerable: true,
-						},
+					if (typeof fn == "function") {
+						vaults[vaultID][name] = fn.bind(vaults[vaultID]);
 					}
-				);
+				}
+				Object.freeze(vaults[vaultID]);
 			}
 
 			let vaultEntry = await getVaultEntry(storageType,vaultID);
+
+			// save abort-signal on vault entry?
+			if (cancelConnection != null) {
+				vaultEntry.externalSignal = cancelConnection;
+			}
 
 			// retrieve (or create) the cryptographic lock-key
 			// for this vault
@@ -176,6 +175,7 @@ async function connect({
 								{ addNewPasskey: true, localIdentity: newLocalIdentity, } :
 								{ localIdentity: vaultEntry.accountID, }
 						),
+						signal: cancelConnection,
 					}) :
 
 					null
@@ -192,6 +192,8 @@ async function connect({
 				)) {
 					vaultEntry.accountID = vaultLockKey.localIdentity;
 					vaultEntry.rpID = relyingPartyID;
+
+					// commit vault-entry to storage (via adapter)
 					await adapters[storageType].write(
 						vaultID,
 						vaultEntry,
@@ -217,7 +219,7 @@ async function connect({
 }
 
 async function removeAll() {
-	for (let [ storageType, adapter ] of Object.entries(adapters)) {
+	for (let adapter of Object.values(adapters)) {
 		try { await adapter.clear(); } catch (err) {}
 	}
 	return true;
@@ -225,45 +227,84 @@ async function removeAll() {
 
 async function has(name) {
 	var { vaultEntry, } = await openVault(this);
-	return (name in vaultEntry.data);
+
+	if (vaultEntry != null) {
+		return (name in vaultEntry.data);
+	}
 }
 
-async function get(name) {
+async function get(name,{ signal, } = {}) {
 	var { vaultEntry, } = await openVault(this);
-	return vaultEntry.data[name];
+
+	if (vaultEntry != null) {
+		return vaultEntry.data[name];
+	}
 }
 
-async function set(name,val) {
+async function set(name,val,{ signal, } = {}) {
+	// JSON drops properties with `undefined` values, so
+	// setting a store entry with `undefined` is just
+	// treated like a remove()
 	if (val === undefined) {
-		return remove(name);
+		return this.remove(name,{ signal, });
 	}
 
-	var { storageType, vaultID, vaultEntry, vaultLockKey, } = await openVault(this);
-	vaultEntry.data[name] = val;
-	await adapters[storageType].write(
-		vaultID,
-		vaultEntry,
-		lockData(vaultEntry.data,vaultLockKey)
-	);
-	return true;
+	var { storageType, vaultID, vaultEntry, vaultLockKey, } = (
+		await openVault(this,signal)
+	) || {};
+
+	if (
+		storageType != null &&
+		vaultID != null &&
+		vaultEntry != null &&
+		vaultLockKey != null
+	) {
+		vaultEntry.data[name] = val;
+
+		// commit vault-entry to storage (via adapter)
+		await adapters[storageType].write(
+			vaultID,
+			vaultEntry,
+			lockData(vaultEntry.data,vaultLockKey)
+		);
+		return true;
+	}
+	return false;
 }
 
-async function remove(name) {
-	var { storageType, vaultID, vaultEntry, vaultLockKey, } = await openVault(this);
-	delete vaultEntry.data[name];
-	await adapters[storageType].write(
-		vaultID,
-		vaultEntry,
-		lockData(vaultEntry.data,vaultLockKey)
-	);
-	return true;
+async function remove(name,{ signal, } = {}) {
+	var { storageType, vaultID, vaultEntry, vaultLockKey, } = (
+		await openVault(this,signal)
+	) || {};
+
+	if (
+		storageType != null &&
+		vaultID != null &&
+		vaultEntry != null &&
+		vaultLockKey != null
+	) {
+		delete vaultEntry.data[name];
+
+		// commit vault-entry to storage (via adapter)
+		await adapters[storageType].write(
+			vaultID,
+			vaultEntry,
+			lockData(vaultEntry.data,vaultLockKey)
+		);
+		return true;
+	}
+	return false;
 }
 
-async function clear() {
-	var { storageType, vaultID, } = await openVault(this);
-	await adapters[storageType].clear(vaultID);
-	vaultEntryCache.delete(vaults[vaultID]);
-	return true;
+async function clear({ signal, } = {}) {
+	var { storageType, vaultID, } = (await openVault(this,signal)) || {};
+
+	if (storageType != null && vaultID != null) {
+		await adapters[storageType].clear(vaultID);
+		vaultEntryCache.delete(vaults[vaultID]);
+		return true;
+	}
+	return false;
 }
 
 function lock() {
@@ -288,80 +329,111 @@ async function addPasskey({
 	localIdentity,
 	relyingPartyID = document.location.hostname,
 	relyingPartyName = "Local Vault",
+	signal: cancelAddPasskey,
 	...keyOptions
 } = {}) {
 	var { vaultEntry, } = await openVault(this);
 
-	try {
-		await getLockKey({
-			...keyOptions,
-			localIdentity: vaultEntry.accountID,
-			relyingPartyID: (
-				vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
-			),
-			relyingPartyName,
-			addNewPasskey: true,
-		});
-		return true;
+	if (vaultEntry != null) {
+		try {
+			let vaultLockKey = await getLockKey({
+				...keyOptions,
+				localIdentity: vaultEntry.accountID,
+				relyingPartyID: (
+					vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
+				),
+				relyingPartyName,
+				addNewPasskey: true,
+				signal: (
+					cancelAddPasskey != null ? cancelAddPasskey :
+					vaultEntry.externalSignal != null ? vaultEntry.externalSignal :
+					null
+				),
+			});
+			return (vaultLockKey != null);
+		}
+		catch (err) {
+			throw new Error("Adding passkey to vault's local-account failed",{ cause: err, });
+		}
 	}
-	catch (err) {
-		throw new Error("Adding passkey to vault's local-account failed",{ cause: err, });
-	}
+	return false;
 }
 
 async function resetLockKey({
 	localIdentity,
 	relyingPartyID = document.location.hostname,
 	relyingPartyName = "Local Vault",
+	signal: cancelResetPasskey,
 	...keyOptions
 } = {}) {
-	var { storageType, vaultID, vaultEntry, } = await openVault(this);
+	var { storageType, vaultID, vaultEntry, } = (await openVault(this)) || {};
 
-	try {
-		let vaultLockKey = await getLockKey({
-			...keyOptions,
-			localIdentity: vaultEntry.accountID,
-			relyingPartyID: (
-				vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
-			),
-			relyingPartyName,
-			resetLockKey: true,
-		});
+	if (
+		storageType != null &&
+		vaultID != null &&
+		vaultEntry != null
+	) {
+		try {
+			let vaultLockKey = await getLockKey({
+				...keyOptions,
+				localIdentity: vaultEntry.accountID,
+				relyingPartyID: (
+					vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
+				),
+				relyingPartyName,
+				resetLockKey: true,
+				signal: (
+					cancelResetPasskey != null ? cancelResetPasskey :
+					vaultEntry.externalSignal != null ? vaultEntry.externalSignal :
+					null
+				),
+			});
 
-		await adapters[storageType].write(
-			vaultID,
-			vaultEntry,
-			lockData(vaultEntry.data,vaultLockKey)
-		);
+			if (vaultLockKey != null) {
+				// commit vault-entry to storage (via adapter)
+				await adapters[storageType].write(
+					vaultID,
+					vaultEntry,
+					lockData(vaultEntry.data,vaultLockKey)
+				);
 
-		return true;
+				return true;
+			}
+		}
+		catch (err) {
+			throw new Error("Resetting vault's lock-key failed",{ cause: err, });
+		}
 	}
-	catch (err) {
-		throw new Error("Resetting vault's lock-key failed",{ cause: err, });
+	return false;
+}
+
+async function keys({ signal, } = {}) {
+	var { vaultEntry, } = (await openVault(this,signal)) || {};
+
+	if (vaultEntry != null) {
+		return Object.keys(vaultEntry.data);
+	}
+	return [];
+}
+
+async function entries({ signal, } = {}) {
+	var { vaultEntry, } = (await openVault(this,signal)) || {};
+
+	if (vaultEntry != null) {
+		return Object.entries(vaultEntry.data);
 	}
 }
 
-async function keys() {
-	var { vaultEntry, } = await openVault(this);
-	return Object.keys(vaultEntry.data);
-}
-
-async function entries() {
-	var { vaultEntry, } = await openVault(this);
-	return Object.entries(vaultEntry.data);
-}
-
-async function __exportLockKey({ risky = false, } = {}) {
+async function __exportLockKey({ risky = false, signal, } = {}) {
 	if (risky == "this is unsafe") {
-		let { vaultLockKey, } = await openVault(this);
-		return { ...vaultLockKey, };
+		return ((await openVault(this,signal)) || {}).vaultLockKey;
 	}
 	else {
 		throw new Error("Must pass {risky:\"this is unsafe\"} argument, to acknowledge the risks of using this method");
 	}
 }
 
-async function openVault(vault) {
+async function openVault(vault,signal) {
 	if (
 		vault != null &&
 		typeof vault.storageType == "string" &&
@@ -379,10 +451,14 @@ async function openVault(vault) {
 			let vaultLockKey = await getLockKey({
 				localIdentity: vaultEntry.accountID,
 				relyingPartyID: vaultEntry.rpID,
+				signal,
 			});
 
-			unlockVaultEntry(vaultEntry,vaultLockKey);
-			return { storageType, vaultID, vaultEntry, vaultLockKey, };
+			// lock-key retrieval successful?
+			if (vaultLockKey != null) {
+				unlockVaultEntry(vaultEntry,vaultLockKey);
+				return { storageType, vaultID, vaultEntry, vaultLockKey, };
+			}
 		}
 		else {
 			throw new Error(`Unknown storage type ('${storageType}')`);
@@ -398,9 +474,9 @@ async function getVaultEntry(storageType,vaultID) {
 		vaultEntryCache.has(vaults[vaultID]) ?
 			vaultEntryCache.get(vaults[vaultID]) :
 
-			// note: read() from adapter always works,
-			// even if it just auto-initializes a new
-			// empty vault entry
+			// read() from adapter always works, even
+			// if it just auto-initializes (and stores)
+			// a new empty vault entry
 			await adapters[storageType].read(vaultID)
 	);
 	vaultEntryCache.set(vaults[vaultID],vaultEntry);

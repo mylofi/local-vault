@@ -348,6 +348,31 @@ A vault instance also has the following methods:
 
 **Note:** All of these methods, except `lock()`, are asynchronous (promise-returning), because they all potentially require passkey re-authentication if the vault's lock-key is not freshly available in the internal recently-used cache.
 
+## Cancelling Vault Operations
+
+If a call to `connect(..)` (or any of the asynchronous vault-instance methods) requires a passkey (re)authentication, there may be a substantial delay while the user is navigating the system prompts. Calling `connect()` or any vault method, while another `connect()` or vault method is currently pending, will abort that previous call -- and should cancel any open system dialogs the user is interacting with.
+
+However, you may want to cancel a currently pending passkey authentication *without* having to call one of these methods again, for example based on a timeout if authentication is taking too long.
+
+All asynchronous vault operations -- `connect()` as well as all the vault-instance methods (except `lock()`) -- accept an optional `signal` option, an [`AbortController.signal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController/signal) instance. If the associated `AbortController` of this signal is aborted (with `abort()`), and the operation is currently pending a passkey authentication, that authentication will be aborted.
+
+For example:
+
+```js
+var cancelToken = new AbortController();
+
+var vault = await connect({
+    /* .. */,
+    signal: cancelToken.signal,
+});
+
+await vault.set("hello","world",{ signal: cancelToken.signal });
+
+await vault.entries({ signal: cancelToken.signal });
+```
+
+Any abort of a pending passkey authentication will throw an exception at the point of the method call (i.e., the `await`). So if you're using cancellation to control vault operations, make sure to use appropriate exception handling techniques (`try..catch`, etc).
+
 ## Re-building `dist/*`
 
 If you need to rebuild the `dist/*` files for any reason, run:
