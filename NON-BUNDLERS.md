@@ -54,4 +54,10 @@ Now, you'll be able to `import` the library in your app in a friendly/readable w
 import { connect } from "local-vault";
 ```
 
-**Note:** If you omit the above `"local-vault"` import-map entry, you can still `import` **local-vault** by specifying the proper path to `lv.js` (as shown above). However, the entries above for `"@lo-fi/local-data-lock"` and `"@lo-fi/webauthn-local-client"` are more required. Alternatively, you'll have to manually edit the `ldl.js` file to change its `import` specifier from `"@lo-fi/webauthn-local-client"` to the proper path to `walc.js`, and you'll have to manually edit the `lv.js` file to change its `import` specifier from `"@lo-fi/local-data-lock"` to the proper path to `ldl.js`.
+**Note:** If you omit the above `"local-vault"` import-map entry, you can still `import` **local-vault** by specifying the proper path to `lv.js` (as shown above). However, the entries above for `idb-keyval`, `"@lo-fi/local-data-lock"`, and `"@lo-fi/webauthn-local-client"` are more required. Alternatively, you'll have to make the following manual edits:
+
+* edit the `adapter.idb.js` file to change its `import` specifier for `idb-keyval` to the proper path to `idb-keyval.js`
+
+* edit the `ldl.js` file to change its `import` specifier for `"@lo-fi/webauthn-local-client"` to the proper path to `walc.js`
+
+* edit the `lv.js` file to change its `import` specifier for `"@lo-fi/local-data-lock"` to the proper path to `ldl.js`

@@ -8,13 +8,13 @@ As such, this project provides plugins for Astro, Vite, and Webpack, to take car
 
 The plugins for Astro, Vite, and Webpack are included in the `bundler-plugins/` directory. They should handle all necessary steps to load the dependencies.
 
-**Note:** You should not need to manually copy any files out of the `dist/bundlers/` directory, as the plugins access the dependencies in `node_modules` directly, to pull the files needed. But for reference, the files these plugins access are:
+**Note:** You should not need to manually copy any files, as the plugins access the dependencies (in `node_modules`) directly, to pull the files needed. But for reference, the files these plugins access are:
 
 * `node_modules/@lo-fi/local-vault/dist/bundlers/lv.mjs`
 
     ESM library module that's suitable for bundling and `import`ing into your web app.
 
-    **Note:** this is *not* the same as `dist/auto/lv.js`, which is only intended [for web application projects WITHOUT a bundler](NON-BUNDLERS.md)
+    **Note:** this is *not* the same as `node_modules/@lo-fi/local-vault/dist/auto/lv.js`, which is only intended [for web application projects WITHOUT a bundler](NON-BUNDLERS.md)
 
 * `node_modules/@lo-fi/local-vault/dist/bundlers/adapter.*.mjs`
 

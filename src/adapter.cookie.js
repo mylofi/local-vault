@@ -92,12 +92,16 @@ function setCookie(name,storageEntry) {
 	var expires = new Date();
 	var expiresSeconds = 400 * 24 * 60 * 60;	// 400 days from now (max allowed)
 	expires.setTime(expires.getTime() + (expiresSeconds * 1000));
+	var cookieName = encodeURIComponent(name);
+	var cookieValue = encodeURIComponent(JSON.stringify(storageEntry));
+	// cookieName + cookieValue > 4kb?
+	//   (https://chromestatus.com/feature/4946713618939904)
+	if ((cookieName.length + cookieValue.length) > 4096) {
+		// https://developer.mozilla.org/en-US/docs/Web/API/DOMException#quotaexceedederror
+		throw new DOMException("Cookie max size (4KB) exceeded","QuotaExceededError");
+	}
 	var cookie = [
-		`${
-			encodeURIComponent(name)
-		}=${
-			encodeURIComponent(JSON.stringify(storageEntry))
-		}`,
+		`${cookieName}=${cookieValue}`,
 		`domain=${document.location.hostname}`,
 		"path=/",
 		"samesite=strict",

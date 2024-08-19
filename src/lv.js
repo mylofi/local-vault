@@ -422,6 +422,7 @@ async function entries({ signal, } = {}) {
 	if (vaultEntry != null) {
 		return Object.entries(vaultEntry.data);
 	}
+	return [];
 }
 
 async function __exportLockKey({ risky = false, signal, } = {}) {

@@ -79,7 +79,7 @@ else {
 }
 ```
 
-Moreover, some client storage mechanisms have different storage limits, which in some cases may be rather small (i.e., 5MB). Be careful with `set()` calls: look for the [`QuotaExceededError` DOM exception](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#quotaexceedederror) being thrown, and determine what data can be freed up, or potentially switch to another storage mechanism with higher limits.
+Moreover, some client storage mechanisms have different storage limits, which in some cases may be rather small (i.e., 5MB for Local-Storage, or 1KB for cookies). Be careful with `set()` calls: look for the [`QuotaExceededError` DOM exception](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#quotaexceedederror) being thrown, and determine what data can be freed up, or potentially switch to another storage mechanism with higher limits.
 
 For example:
 
@@ -104,13 +104,13 @@ Each mechanism is size-limited to 5MB, on most all browsers/devices. And they ar
 
 The `cookie` adapter stores vault data in browser cookies. There are however some strong caveats to consider before choosing this storage mechanism.
 
-Cookies are typically limited to 2MB. Moreover, data in the cookie must be URI-encoded (e.g, replacing spaces with `%20`), which increases your data size further towards this limit. And there's no exception thrown if you exceed the limit, it may just silently truncate (corrupt) data on write. For stable behavior, you'll need to carefully monitor your own data size to stay comfortably under that limit.
+Cookies are limited to ~4KB. Moreover, the provided data object has been JSON-serialized, encrypted and then base64 string encoded, then *that value* has been put into another object that's JSON-serialized, and that string (the actual cookie value) is URI-encoded (e.g, replacing `" "` with `%20`, etc). Taking into account all these steps that inflate your data size further towards the 4KB limit, you might only be able to squeeze ~2-3KB of original application data in, under the limit.
 
-Also, cookies are typically sent on *every request* to a first-party origin server (images, CSS, fetch calls, etc). So that data (encrypted, of course) will be sent remotely, and will weigh down all those requests.
+Also, cookies are typically sent on *every request* to a first-party origin server (images, CSS, fetch calls, etc). So that data (encrypted, of course) will be sent remotely, and will significantly weigh down all those requests.
 
 Moreover, cookies are never "persistent" storage, and are subject to both expirations (maximum allowed is ~400 days out from the last update) and to users clearing them.
 
-All these concerns considered, the `cookie` adapter *really should not be used* except as a last resort. For example, your app might use this storage as a temporary location if normal storage quota has been reached, and later synchronize/migrate/backup off-device, etc.
+All these concerns considered, the `cookie` adapter *really should not be used* except as a last resort, for small amounts of data. For example, your app might use this storage as a temporary location if normal storage quota has been reached, and later synchronize/migrate/backup off-device, etc.
 
 #### Origin Private File System
 
@@ -354,7 +354,7 @@ If a call to `connect(..)` (or any of the asynchronous vault-instance methods) r
 
 However, you may want to cancel a currently pending passkey authentication *without* having to call one of these methods again, for example based on a timeout if authentication is taking too long.
 
-All asynchronous vault operations -- `connect()` as well as all the vault-instance methods (except `lock()`) -- accept an optional `signal` option, an [`AbortController.signal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController/signal) instance. If the associated `AbortController` of this signal is aborted (with `abort()`), and the operation is currently pending a passkey authentication, that authentication will be aborted.
+All asynchronous vault operations -- `connect()` as well as all the vault-instance methods (except `lock()`) -- accept an optional `signal` option, an [`AbortController.signal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortController/signal) instance. If the associated `AbortController` of this signal is aborted (with `abort()`), and the operation is currently pending a passkey authentication, that operation will be cancelled.
 
 For example:
 
@@ -365,6 +365,9 @@ var vault = await connect({
     /* .. */,
     signal: cancelToken.signal,
 });
+
+// 5 second timeout for passkey authentication
+setTimeout(() => cancelToken.abort("Took too long!"),5000);
 
 await vault.set("hello","world",{ signal: cancelToken.signal });
 
