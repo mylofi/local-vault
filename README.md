@@ -25,7 +25,7 @@ A *local vault* instance is a simple key-value store (`get()`, `set()`, etc), ba
 
 The primary feature of this library is automatically handling encryption (on write) and decryption (on read) from a local vault's data -- so data is always encrypted at-rest -- all client-side with no servers.
 
-The cryptographic encryption/decryption key is furthermore protected locally in the client in a biometric passkey (i.e., in an authenticator, secure enclave, etc). Users can thus safely access their protected data with a simple biometric passkey authentication -- no troublesome passwords, and no privacy-eroding remote servers!
+The [cryptographic encryption/decryption key is furthermore protected locally in the client in a biometric passkey (i.e., in an authenticator, secure enclave, etc)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work). Users can thus safely access their protected data with a simple biometric passkey authentication -- no troublesome passwords, and no privacy-eroding remote servers!
 
 **Local Vault** directly depends on [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**Webauthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
 
@@ -152,21 +152,23 @@ else {
 
 ## Local Vaults
 
-A "local vault" is a JS object (JSON compatible), with the following three properties:
+A "local vault" is a JS object (JSON compatible), which is actually stored in the [client storage mechanism](#client-side-storage-adapters) you choose, either directly (for IndexedDB) or as a JSON serialized string.
 
-* `accountID` string, holding the ID of the "local account" attached to one or more device passkeys, which themselves hold the encryption/decryption cryptographic key
+The local-vault object has the following three properties:
 
-* `rpID` string, holding the "ID" of the "relying party", which for web applications should almost always be the fully-qualified hostname (i.e., `document.location.hostname`) of the webapp
+* `accountID` (string): holding the ID of the [*local account* attached to one or more device passkeys](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#registering-a-local-account-and-lock-key-keypair), each of which [hold the (same) encryption/decryption cryptographic key](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work)
 
-* `data` string, holding the encrypted data in base64 encoding
+* `rpID` (string): holds the [*relying party ID*](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#configuring-passkeys), which for web applications should almost always be the fully-qualified hostname (i.e., `document.location.hostname`) of the webapp
 
-This local vault object is stored in the [client storage mechanism](#client-side-storage-adapters) you choose, either directly (for IndexedDB) or as a JSON serialized string.
+* `data` (string): holds the encrypted data, in base64 encoding
+
+**NOTE:** This local-vault object is *not* something your code should retrieve or modify in any way, directly. Instead, you'll use the methods on the vault-instance, as described in the next section.
 
 ## Setting up a local vault instance
 
-The local vault object described previously is distinct from the vault-instance that you interact with in code. The vault-instance exposes a simple API (`get()`, `set()`, etc) for managing key-value style data access. Encryption and key-management is all handled automatically while interacting with the vault-instance.
+The vault-instance, created from a `connect()` call, exposes a simple API (`get()`, `set()`, etc) for managing key-value style data access. Encryption and key-management is all handled automatically while interacting with this vault-instance.
 
-To setup a new vault-instance, use the `connect()` method:
+To setup a new vault-instance:
 
 ```js
 import "@lo-fi/local-vault/adapter-idb";
@@ -188,7 +190,7 @@ vault.storageType;      // "idb"
 
 The `storageType` is required on every `connect()` call. You'll likely do all your vault storage in *one* storage mechanism, so this is probably a fixed value you configure once in your app code -- rather than being an option the user chooses, for example.
 
-Any options set under `keyOptions` are passed along to the underlying [**Local Data Lock** library's `getLockKey()` method](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#registering-a-local-account).
+Any [options set under `keyOptions`](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#configuring-passkeys) are passed along to the underlying [**Local Data Lock** library's `getLockKey()` method](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#registering-a-local-account).
 
 **Note:** The `username` / `displayName` key-options illustrated above are not strictly required, but are strongly recommended; they're only passed along to the biometric passkey, as meta-data for such. The device will often use one or both values in its prompt dialogs, so these values should either be something the user has picked, or at least be something the user will recognize and trust. Also, there may very well be multiple passkeys associated with the same local account, so the username/display-name should be differentiated to help the users know which passkey they're authenticating with.
 
@@ -201,7 +203,7 @@ var vault = await connect({
     storageType: "idb",
     addNewVault: true,
     keyOptions: {
-        // created by another vault instance, even on
+        // created by another vault instance, perhaps on
         // another device
         useLockKey: existingLockKey
     }
@@ -221,7 +223,7 @@ var vault = await connect({
 });
 ```
 
-**Note:** If the vault's lock-key (biometric passkey protected) is still in the recent-access cache (default timeout: 30 minutes), a `connect()` call will complete silently. Otherwise, the user will be prompted by the device to re-authenticate with their passkey (to access the lock-key) before unlocking the vault.
+**Note:** If the vault's lock-key (biometric passkey protected) is [still in the recent-access cache (default timeout: 30 minutes)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#change-passkey-cache-lifetime), a `connect()` call will complete silently. Otherwise, the user will be prompted by the device to re-authenticate with their passkey (to access the lock-key) before unlocking the vault.
 
 ### Discoverable Vaults
 

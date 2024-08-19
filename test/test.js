@@ -353,6 +353,7 @@ async function setupVault() {
 		return showVaultContents();
 	}
 	catch (err) {
+		if (intv != null) { clearTimeout(intv); }
 		logError(err);
 		stopSpinner();
 		showError("Setting up vault failed.");
@@ -382,6 +383,7 @@ async function detectVault() {
 		return showVaultContents();
 	}
 	catch (err) {
+		if (intv != null) { clearTimeout(intv); }
 		logError(err);
 		stopSpinner();
 		showError("Detecting vault with passkey authentication failed.");
@@ -448,6 +450,7 @@ async function openVault() {
 		return showVaultContents();
 	}
 	catch (err) {
+		if (intv != null) { clearTimeout(intv); }
 		logError(err);
 		stopSpinner();
 		showError("Opening vault via passkey failed.");
@@ -489,6 +492,7 @@ async function addPasskeyToVault() {
 			}
 		}
 		catch (err) {
+			if (intv != null) { clearTimeout(intv); }
 			logError(err);
 			stopSpinner();
 			showError("Adding passkey to vault failed.");
