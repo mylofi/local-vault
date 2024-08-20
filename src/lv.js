@@ -225,8 +225,8 @@ async function removeAll() {
 	return true;
 }
 
-async function has(name) {
-	var { vaultEntry, } = await openVault(this);
+async function has(name,{ signal, } = {}) {
+	var { vaultEntry, } = await openVault(this,signal);
 
 	if (vaultEntry != null) {
 		return (name in vaultEntry.data);
@@ -234,7 +234,7 @@ async function has(name) {
 }
 
 async function get(name,{ signal, } = {}) {
-	var { vaultEntry, } = await openVault(this);
+	var { vaultEntry, } = await openVault(this,signal);
 
 	if (vaultEntry != null) {
 		return vaultEntry.data[name];
