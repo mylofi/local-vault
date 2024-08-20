@@ -27,7 +27,7 @@ The primary feature of this library is automatically handling encryption (on wri
 
 The [cryptographic encryption/decryption key is furthermore protected locally in the client in a biometric passkey (i.e., in an authenticator, secure enclave, etc)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work). Users can thus safely access their protected data with a simple biometric passkey authentication -- no troublesome passwords, and no privacy-eroding remote servers!
 
-**Local Vault** directly depends on [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**Webauthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
+**Local Vault** directly depends on [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**WebAuthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
 
 ## Client Side Storage Adapters
 
