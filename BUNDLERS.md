@@ -164,6 +164,9 @@ This plugin copies the `node_modules/@lo-fi/webauthn-local-client/dist/bundlers/
 To import and use **local-vault** in a *bundled* browser app:
 
 ```js
+// {WHICHEVER}: "idb", "local-storage", etc
+import from "@lo-fi/local-vault/adapter/{WHICHEVER}";
+
 import { connect } from "@lo-fi/local-vault";
 ```
 

@@ -2,9 +2,11 @@
 
 **Local Vault** is intended primarily as an abstraction that automatically and opaquely handles the necessary encryption/decryption operations -- and secures the keypair(s) with a biometric passkey on the device.
 
-**WARNING:** If you store a vault's lock-key on the user's device, alongside the data that was encrypted with that key, you have essentially defeated the protection; an attacker has all they need to decrypt and exfiltrate (or manipulate/remove!) the user's data. For this reason, it's strongly recommended that you not deal with a vault's lock-key directly, if at all possible. For best security, let **Local Vault** handle these details!
+**WARNING:** If you store a vault's lock-key on the user's device, alongside the data that was encrypted with that key, you have essentially defeated the protection; an attacker has all they need to decrypt and exfiltrate (or manipulate/remove!) the user's data. For this reason, it's strongly recommended that you not deal with a vault's lock-key directly, if at all possible.
 
-Moreover, in managing lock-key access during a page instance, **Local Vault** (via **Local Data Lock**) uses an internal cache of lock-keys retrieved via passkey authentication (with 30 minutes default timeout). This means that users shouldn't be prompted for passkey authentication more than once per 30 minutes (while in the same page instance). This timeout can be modified via `setMaxLockKeyCacheLifetime()` (from **Local Data Lock**).
+For best security, let **Local Vault** handle these details!
+
+Moreover, in managing lock-key access during a page instance, **Local Vault** (via **Local Data Lock**) uses an internal cache of lock-keys retrieved via passkey authentication (with [30 minutes default timeout](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#change-passkey-cache-lifetime)). This means that users shouldn't be prompted for passkey authentication more than once per 30 minutes (while in the same page instance). This timeout can be modified via `setMaxLockKeyCacheLifetime()` (from **Local Data Lock**).
 
 It's strongly recommended to [allow **Local Vault** to manage the balance between security and UX convenience](https://github.com/mylofi/local-data-lock#security-vs-convenience) with this timeout-limited caching of lock-key access.
 
@@ -17,7 +19,7 @@ To manually derive a lock-key, use the [`deriveLockKey()` method from **Local Da
 ```js
 import { deriveLockKey } from "@lo-fi/local-data-lock";
 
-var key = deriveLockKey(seedValue);
+var lockKey = deriveLockKey(seedValue);
 ```
 
 The `seedValue` (aka IV) must be a 32-byte sized `Uint8Array` instance; it may be generated randomly (see [`generateEntropy()` from **Local Data Lock**](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#deriving-an-encryptiondecryption-key)), or pulled from an existing lock-key value's `iv` property.
@@ -66,7 +68,7 @@ With this helper, you can, for example, save a lock-key into `localStorage`, so 
 ```js
 var vault = await connect({ .. });
 
-var lockKey = await __exportLockKey({ risky: "this is unsafe" });
+var lockKey = await vault.__exportLockKey({ risky: "this is unsafe" });
 
 var lockKeyStr = serializeLockKey(lockKey);
 
@@ -77,19 +79,19 @@ window.localStorage.setItem("lock-key",lockKeyStr);
 
 ### Simpler Approach: IV/seed
 
-Instead of preserving the entire lock-key object value, its `iv` value (IV/seed used for the keypair) is enough to re-derive the full keypair; this is a `Uint8Array` value, so it likely needs to be converted to a base64 encoded string:
+Instead of preserving the entire lock-key object value, specifically its `iv` value (IV/seed used for the keypair) is enough to re-derive the full keypair; this is a `Uint8Array` value, so it likely needs to be converted to a base64 encoded string:
 
 ```js
 import { connect, toBase64String } from "..";
 
 var vault = await connect({ .. });
 
-var lockKey = await __exportLockKey({ risky: "this is unsafe" });
+var lockKey = await vault.__exportLockKey({ risky: "this is unsafe" });
 
 var ivStr = toBase64String(lockKey.iv);
 ```
 
-To restore the full keypair object value from a serialized `iv` (either stored or transmitted), you'll use `fromBase64String()` to turn it back into a `Uint8Array` value, then pass that to [`deriveKey()`, as explained here](#manually-deriving-a-lock-key).
+To restore the full keypair object value from a serialized `iv` (either stored or transmitted), you'll need to use `fromBase64String()` to turn it back into a `Uint8Array` value, then pass that to [`deriveKey()`, as explained here](#manually-deriving-a-lock-key).
 
 ### De-serializing full lock-key
 
@@ -142,7 +144,7 @@ var vault = await connect({
 });
 ```
 
-**Note:** Even though this lock-key is being manually specified at vault creation, the user will be prompted at for a passkey authentication this time, to save the lock-key. There is intentionally no way to use **Local Vault** without a user being passkey-authentication prompted at least once (per device), at initial vault setup.
+**Note:** Even though this lock-key is being manually specified at vault creation, the user will still be prompted for passkey authentication at this time, to be able to save the lock-key. There is *intentionally no way* to use **Local Vault** without a user being passkey-authentication prompted at least once (per device), at initial vault setup.
 
 ## Manually setting lock-key when connecting to existing vault
 
@@ -160,7 +162,7 @@ var vault = await connect({
 });
 ```
 
-**Note:** If `vaultID` is not known (or was lost!), a vault can still be connected via ["discovery mode"](README.md#discoverable-vaults). However, silent connection via `useLockKey` is not allowed for this mode -- doing so will throw an error! Instead, the user must instead be prompted for a passkey authentication to pull the lock-key.
+**Note:** If `vaultID` is not known (or was lost!), a vault can still be connected via ["discovery mode"](README.md#discoverable-vaults). However, silent connection via `useLockKey` is not allowed for this mode -- doing so will throw an error! Instead, the user must instead be prompted for a passkey authentication to pull the lock-key. You could then re-save that vault ID (`vault.id`), along with the lock-key, to enable subsequent silent reconnections.
 
 ## Manually setting lock-key for vault instance operations
 

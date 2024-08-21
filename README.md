@@ -25,7 +25,7 @@ A *local vault* instance is a simple key-value store (`get()`, `set()`, etc), ba
 
 The primary feature of this library is automatically handling encryption (on write) and decryption (on read) from a local vault's data -- so data is always encrypted at-rest -- all client-side with no servers.
 
-The [cryptographic encryption/decryption key is furthermore protected locally in the client in a biometric passkey (i.e., in an authenticator, secure enclave, etc)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work). Users can thus safely access their protected data with a simple biometric passkey authentication -- no troublesome passwords, and no privacy-eroding remote servers!
+The [cryptographic encryption/decryption key is furthermore protected locally in the client in a biometric passkey (i.e., authenticator, secure enclave, etc)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work). Users can thus safely access their protected data with a simple biometric passkey authentication -- no troublesome passwords, and no privacy-eroding remote servers!
 
 **Local Vault** directly depends on [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**WebAuthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
 
@@ -54,10 +54,10 @@ To load a storage mechanism's adapter (e.g., `idb` for IndexedDB):
 ```js
 import "@lo-fi/local-vault/adapter/idb";
 
-import { connect } from "@lo-fi/local-vault";
+import { connect } from "..";
 ```
 
-You can load all five adapters, or only one. But you must have at least one adapter defined, and calls to `connect()` must always specify a storage-type that matches one of the loaded adapters.
+You can load any or all of the adapters. But you must have at least one adapter defined, and calls to `connect()` must always specify a storage-type that matches one of those loaded adapters.
 
 ### Storage Limitations
 
@@ -168,7 +168,7 @@ The local-vault object has the following three properties:
 
 The vault-instance, created from a `connect()` call, exposes a simple API (`get()`, `set()`, etc) for managing key-value style data access. Encryption and key-management is all handled automatically while interacting with this vault-instance.
 
-To setup a new vault-instance:
+To setup a new vault-instance (using the IDB storage type):
 
 ```js
 import "@lo-fi/local-vault/adapter-idb";
@@ -188,26 +188,42 @@ vault.id;               // ".." (auto-generated string)
 vault.storageType;      // "idb"
 ```
 
-The `storageType` is required on every `connect()` call. You'll likely do all your vault storage in *one* storage mechanism, so this is probably a fixed value you configure once in your app code -- rather than being an option the user chooses, for example.
+The `storageType` setting is required on every `connect()` call. You'll likely do all your vault storage in *one* storage mechanism, so this is probably a fixed value you configure once in your app code -- rather than being an option the user chooses, for example.
 
 Any [options set under `keyOptions`](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#configuring-passkeys) are passed along to the underlying [**Local Data Lock** library's `getLockKey()` method](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#registering-a-local-account).
 
+When setting up a new vault instance can, [you *can* manually specify a lock-key](LOCK-KEY.md#manually-setting-lock-key-on-a-new-vault).
+
 **Note:** The `username` / `displayName` key-options illustrated above are not strictly required, but are strongly recommended; they're only passed along to the biometric passkey, as meta-data for such. The device will often use one or both values in its prompt dialogs, so these values should either be something the user has picked, or at least be something the user will recognize and trust. Also, there may very well be multiple passkeys associated with the same local account, so the username/display-name should be differentiated to help the users know which passkey they're authenticating with.
 
-**Note:** When setting up a new vault instance can, [you *can* manually specify a lock-key](LOCK-KEY.md#manually-setting-lock-key-on-a-new-vault).
+### Manually specifying a vault ID
 
-## Reconnecting a Vault
+It's often best to let `connect()` automatically generate a unique ID for a new vault. However, this requires storing that value (from `vault.id`) to use in [subsequent vault reconnections](#reconnecting-a-vault).
 
-You may save the auto-generated `vault.id` value from a `connect()` call, to use in subsequent reconnections, again using `connect()`:
+Alternatively, you can manually specify a vault ID:
 
 ```js
 var vault = await connect({
-   storageType: "idb",
-   vaultID: existingVaultID     // saved from previous connect() call
+    storageType: "..",
+    addNewVault: true,
+    vaultID: "my-app-data"
 });
+
+vault.id;               // "my-app-data"
 ```
 
-**Note:** If the vault's lock-key (biometric passkey protected) is [still in the recent-access cache (default timeout: 30 minutes)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#change-passkey-cache-lifetime), a `connect()` call will complete silently. Otherwise, the user will be prompted by the device to re-authenticate with their passkey (to access the lock-key) before unlocking the vault.
+**Note:** Ensure the vault ID is unique (per device).
+
+## Reconnecting a vault
+
+If you manually specified a vault ID at the initial setup `connect()` call, or if you preserved the auto-generated vault ID (i.e., from `vault.id`), you can later reconnect to that vault by providing its existing vault ID:
+
+```js
+var vault = await connect({
+   storageType: "..",
+   vaultID: existingVaultID
+});
+```
 
 ### Discoverable Vaults
 
@@ -217,14 +233,24 @@ So you can instead use "vault discovery" mode to detect which vault to use, base
 
 ```js
 var vault = await connect({
-    storageType: "idb",
+    storageType: "..",
     discoverVault: true
 });
 ```
 
 Discovery mode should only be used when you're sure the user has already setup a vault on this device. If a suitable passkey is not authenticated with, and matching vault is not found, a discovery mode `connect()` call will fail with an exception.
 
-**Note:** Discovery mode will *always* prompt the user for passkey authentication. This might mean a user would have to reauthenticate on each page load, for example. As an affordance to reduce user friction, you might choose to store the vault-ID in `sessionStorage`, along with a timestamp. Even after page refreshes, you might keep using this vault-ID **without** discovery mode. But after a certain amount of time since last authentication has passed, you might choose to push for reauthentication by discarding the known vault-ID and using discovery mode. Alternatively, you might call `lock()` on the vault-instance after a certain period of time, thereby ensuring the next vault operation will re-prompt the user for passkey authentication.
+**Note:** Discovery mode will *always* prompt the user for passkey authentication.
+
+### Long-lived vault connections
+
+The default behavior of a vault is to prompt the user for passkey authentication on setup, and on reconnection (subsequent page loads).
+
+Moreover, the lock-key retrieved from a passkey authentication is kept in an internal recent-access cache (default timeout: 30 minutes)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#change-passkey-cache-lifetime), so that any subsequent vault operations complete silently (no passkey authentication prompt). Once the internal lock-key cache entry expires, the next vault operation will re-prompt the user for passkey authentication.
+
+This design is intentionally balanced between more security (prompting every time) and more convenience (long-lived connections that rarely re-prompt the user).
+
+You're strongly encouraged to allow **Local Vault**'s default security behavior. However, if you need to manually override to extend vault connections, [please see the LOCK-KEY guide for more options](LOCK-KEY.md).
 
 ## Removing All Local Data
 
@@ -347,13 +373,13 @@ For example:
 ```js
 var cancelToken = new AbortController();
 
+// 5 second timeout for passkey authentication
+setTimeout(() => cancelToken.abort("Took too long!"),5000);
+
 var vault = await connect({
     /* .. */,
     signal: cancelToken.signal,
 });
-
-// 5 second timeout for passkey authentication
-setTimeout(() => cancelToken.abort("Took too long!"),5000);
 
 await vault.set("hello","world",{ signal: cancelToken.signal });
 

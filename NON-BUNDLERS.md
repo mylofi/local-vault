@@ -25,6 +25,9 @@ Then copy over all `dist/auto/*` contents, as-is:
 To import and use **local-vault** in a *non-bundled* browser app:
 
 ```js
+// {WHICHEVER}: "idb", "local-storage", etc
+import from "/path/to/js-assets/local-vault/adapter.{WHICHEVER}.js";
+
 import { connect } from "/path/to/js-assets/local-vault/lv.js";
 ```
 
@@ -37,6 +40,12 @@ If your **non-bundled** browser app has an [Import Map](https://developer.mozill
 {
     "imports": {
         "local-vault": "/path/to/js-assets/local-vault/lv.js",
+
+        "local-vault/adapter/idb": "/path/to/js-assets/local-vault/adapter.idb.js",
+        "local-vault/adapter/local-storage": "/path/to/js-assets/local-vault/adapter.local-storage.js",
+        "local-vault/adapter/session-storage": "/path/to/js-assets/local-vault/adapter.session-storage.js",
+        "local-vault/adapter/cookie": "/path/to/js-assets/local-vault/adapter.cookie.js",
+        "local-vault/adapter/opfs": "/path/to/js-assets/local-vault/adapter.opfs.js",
 
         "idb-keyval": "/path/to/js-assets/local-vault/external/idb-keyval.js",
 
@@ -51,10 +60,15 @@ If your **non-bundled** browser app has an [Import Map](https://developer.mozill
 Now, you'll be able to `import` the library in your app in a friendly/readable way:
 
 ```js
+// {WHICHEVER}: "idb", "local-storage", etc
+import from "local-vault/adapter/{WHICHEVER}";
+
 import { connect } from "local-vault";
 ```
 
-**Note:** If you omit the above `"local-vault"` import-map entry, you can still `import` **local-vault** by specifying the proper path to `lv.js` (as shown above). However, the entries above for `idb-keyval`, `"@lo-fi/local-data-lock"`, and `"@lo-fi/webauthn-local-client"` are more required. Alternatively, you'll have to make the following manual edits:
+**Note:** If you omit the above `"local-vault"` import-map entry, you can still `import` **local-vault** by specifying the proper path to `lv.js` (as shown above). Same for the "adapter" entries.
+
+However, the entries above for `idb-keyval`, `"@lo-fi/local-data-lock"`, and `"@lo-fi/webauthn-local-client"` are more required. Alternatively, you'll have to make the following manual edits:
 
 * edit the `adapter.idb.js` file to change its `import` specifier for `idb-keyval` to the proper path to `idb-keyval.js`
 
