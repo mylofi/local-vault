@@ -246,7 +246,7 @@ Discovery mode should only be used when you're sure the user has already setup a
 
 The default behavior of a vault is to prompt the user for passkey authentication on setup, and on reconnection (subsequent page loads).
 
-Moreover, the lock-key retrieved from a passkey authentication is kept in an internal recent-access cache (default timeout: 30 minutes)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#change-passkey-cache-lifetime), so that any subsequent vault operations complete silently (no passkey authentication prompt). Once the internal lock-key cache entry expires, the next vault operation will re-prompt the user for passkey authentication.
+Moreover, the lock-key retrieved from a passkey authentication is kept in an [internal recent-access cache (default timeout: 30 minutes)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#change-passkey-cache-lifetime), so that any subsequent vault operations complete silently (no passkey authentication prompt). Once the internal lock-key cache entry expires, the next vault operation will re-prompt the user for passkey authentication.
 
 This design is intentionally balanced between more security (prompting every time) and more convenience (long-lived connections that rarely re-prompt the user).
 
