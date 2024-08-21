@@ -35,7 +35,7 @@ function write(vaultID,vaultInfo,vaultData) {
 	}
 	catch (err) {
 		if (err.name == "QuotaExceededError") {
-			throw new Error("Local-storage is full, please request more storage space.",{ cause: err, });
+			throw new Error("Session-storage is full.",{ cause: err, });
 		}
 		throw err;
 	}

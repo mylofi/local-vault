@@ -26,7 +26,15 @@ function read(vaultID,vaultInfo) {
 }
 
 function write(vaultID,vaultInfo,vaultData) {
-	return setCookie(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+	try {
+		return setCookie(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+	}
+	catch (err) {
+		if (err.name == "QuotaExceededError") {
+			throw new Error("Cookie is full.",{ cause: err, });
+		}
+		throw err;
+	}
 }
 
 function find(search) {
