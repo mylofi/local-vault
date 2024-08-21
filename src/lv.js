@@ -77,6 +77,7 @@ async function connect({
 		relyingPartyID = document.location.hostname,
 		relyingPartyName = "Local Vault",
 		localIdentity: newLocalIdentity,
+		useLockKey,
 		...keyOptions
 	} = {},
 	addNewVault = false,
@@ -85,6 +86,11 @@ async function connect({
 }) {
 	if (storageType in adapters) {
 		if (discoverVault) {
+			// protect against invalid usage
+			if (useLockKey != null) {
+				throw new Error("Explicit lock-key not allowed in vault-discovery mode");
+			}
+
 			let localIdentities = listLocalIdentities();
 
 			// attempt to discover lock-key from chosen passkey
@@ -120,7 +126,9 @@ async function connect({
 
 			throw new Error(`No matching vault found in storage ('${storageType}') for presented passkey`);
 		}
-		else if (vaultID != null || addNewVault) {
+		// adding a new vault, or explicitly connecting to existing
+		// vault?
+		else if (addNewVault || vaultID != null) {
 			// need to generate new random vault ID?
 			if (addNewVault && vaultID == null) {
 				vaultID = (
@@ -128,6 +136,7 @@ async function connect({
 					.replace(/[^a-zA-Z0-9]+/g,"")
 				);
 			}
+
 			// need to define vault instance (public API)?
 			if (!(vaultID in vaults)) {
 				vaults[vaultID] = {
@@ -163,7 +172,15 @@ async function connect({
 			// retrieve (or create) the cryptographic lock-key
 			// for this vault
 			let vaultLockKey = (
+				// lock-key provided manually?
+				(!addNewVault && useLockKey != null) ?
+					// use it instead of trying to retrieve from
+					// the passkey
+					useLockKey :
+
+				// add new vault lock-key, or retrieve existing lock-key?
 				(addNewVault || vaultEntry.accountID != null) ?
+					// pull lock-key from passkey
 					await getLockKey({
 						...keyOptions,
 						relyingPartyID: (
@@ -172,13 +189,13 @@ async function connect({
 						relyingPartyName,
 						...(
 							addNewVault ?
-								{ addNewPasskey: true, localIdentity: newLocalIdentity, } :
+								{ addNewPasskey: true, localIdentity: newLocalIdentity, useLockKey, } :
 								{ localIdentity: vaultEntry.accountID, }
 						),
 						signal: cancelConnection,
 					}) :
 
-					null
+				null
 			);
 
 			// vault lock-key retrieval successful?
@@ -225,32 +242,32 @@ async function removeAll() {
 	return true;
 }
 
-async function has(name,{ signal, } = {}) {
-	var { vaultEntry, } = await openVault(this,signal);
+async function has(name,{ useLockKey, signal, } = {}) {
+	var { vaultEntry, } = await openVault(this,useLockKey,signal);
 
 	if (vaultEntry != null) {
 		return (name in vaultEntry.data);
 	}
 }
 
-async function get(name,{ signal, } = {}) {
-	var { vaultEntry, } = await openVault(this,signal);
+async function get(name,{ useLockKey, signal, } = {}) {
+	var { vaultEntry, } = await openVault(this,useLockKey,signal);
 
 	if (vaultEntry != null) {
 		return vaultEntry.data[name];
 	}
 }
 
-async function set(name,val,{ signal, } = {}) {
+async function set(name,val,{ useLockKey, signal, } = {}) {
 	// JSON drops properties with `undefined` values, so
 	// setting a store entry with `undefined` is just
 	// treated like a remove()
 	if (val === undefined) {
-		return this.remove(name,{ signal, });
+		return this.remove(name,{ useLockKey, signal, });
 	}
 
 	var { storageType, vaultID, vaultEntry, vaultLockKey, } = (
-		await openVault(this,signal)
+		await openVault(this,useLockKey,signal)
 	) || {};
 
 	if (
@@ -272,9 +289,9 @@ async function set(name,val,{ signal, } = {}) {
 	return false;
 }
 
-async function remove(name,{ signal, } = {}) {
+async function remove(name,{ useLockKey, signal, } = {}) {
 	var { storageType, vaultID, vaultEntry, vaultLockKey, } = (
-		await openVault(this,signal)
+		await openVault(this,useLockKey,signal)
 	) || {};
 
 	if (
@@ -296,8 +313,10 @@ async function remove(name,{ signal, } = {}) {
 	return false;
 }
 
-async function clear({ signal, } = {}) {
-	var { storageType, vaultID, } = (await openVault(this,signal)) || {};
+async function clear({ useLockKey, signal, } = {}) {
+	var { storageType, vaultID, } = (
+		await openVault(this,useLockKey,signal)
+	) || {};
 
 	if (storageType != null && vaultID != null) {
 		await adapters[storageType].clear(vaultID);
@@ -307,7 +326,10 @@ async function clear({ signal, } = {}) {
 	return false;
 }
 
-function lock() {
+function lock({ useLockKey } = {}) {
+	if (useLockKey != null) {
+		throw new Error("Explicit lock-key not allowed when locking a vault");
+	}
 	var vault = this;
 	if (
 		vault != null &&
@@ -329,10 +351,14 @@ async function addPasskey({
 	localIdentity,
 	relyingPartyID = document.location.hostname,
 	relyingPartyName = "Local Vault",
+	useLockKey,
 	signal: cancelAddPasskey,
 	...keyOptions
 } = {}) {
-	var { vaultEntry, } = await openVault(this);
+	if (useLockKey != null) {
+		throw new Error("Explicit lock-key not allowed when adding a passkey to a vault");
+	}
+	var { vaultEntry, } = await openVault(this,null,cancelAddPasskey);
 
 	if (vaultEntry != null) {
 		try {
@@ -363,10 +389,13 @@ async function resetLockKey({
 	localIdentity,
 	relyingPartyID = document.location.hostname,
 	relyingPartyName = "Local Vault",
+	useLockKey,
 	signal: cancelResetPasskey,
 	...keyOptions
 } = {}) {
-	var { storageType, vaultID, vaultEntry, } = (await openVault(this)) || {};
+	var { storageType, vaultID, vaultEntry, } = (
+		await openVault(this,useLockKey,cancelResetPasskey)
+	) || {};
 
 	if (
 		storageType != null &&
@@ -382,6 +411,7 @@ async function resetLockKey({
 				),
 				relyingPartyName,
 				resetLockKey: true,
+				useLockKey,
 				signal: (
 					cancelResetPasskey != null ? cancelResetPasskey :
 					vaultEntry.externalSignal != null ? vaultEntry.externalSignal :
@@ -407,8 +437,8 @@ async function resetLockKey({
 	return false;
 }
 
-async function keys({ signal, } = {}) {
-	var { vaultEntry, } = (await openVault(this,signal)) || {};
+async function keys({ useLockKey, signal, } = {}) {
+	var { vaultEntry, } = (await openVault(this,useLockKey,signal)) || {};
 
 	if (vaultEntry != null) {
 		return Object.keys(vaultEntry.data);
@@ -416,8 +446,8 @@ async function keys({ signal, } = {}) {
 	return [];
 }
 
-async function entries({ signal, } = {}) {
-	var { vaultEntry, } = (await openVault(this,signal)) || {};
+async function entries({ useLockKey, signal, } = {}) {
+	var { vaultEntry, } = (await openVault(this,useLockKey,signal)) || {};
 
 	if (vaultEntry != null) {
 		return Object.entries(vaultEntry.data);
@@ -425,16 +455,19 @@ async function entries({ signal, } = {}) {
 	return [];
 }
 
-async function __exportLockKey({ risky = false, signal, } = {}) {
+async function __exportLockKey({ risky = false, useLockKey, signal, } = {}) {
 	if (risky == "this is unsafe") {
-		return ((await openVault(this,signal)) || {}).vaultLockKey;
+		if (useLockKey != null) {
+			throw new Error("Explicit lock-key not allowed when exporting existing lock-key");
+		}
+		return ((await openVault(this,null,signal)) || {}).vaultLockKey;
 	}
 	else {
 		throw new Error("Must pass {risky:\"this is unsafe\"} argument, to acknowledge the risks of using this method");
 	}
 }
 
-async function openVault(vault,signal) {
+async function openVault(vault,useLockKey,signal) {
 	if (
 		vault != null &&
 		typeof vault.storageType == "string" &&
@@ -446,14 +479,22 @@ async function openVault(vault,signal) {
 			// it's just a newly initialized entry
 			let vaultEntry = await getVaultEntry(storageType,vaultID);
 
-			// even if the local vault cache is still present
-			// and unlocked, retrieve the lock-key to ensure that
-			// if its caching has expired, the user is re-prompted
-			let vaultLockKey = await getLockKey({
-				localIdentity: vaultEntry.accountID,
-				relyingPartyID: vaultEntry.rpID,
-				signal,
-			});
+			let vaultLockKey = (
+				// lock-key provided manually?
+				useLockKey != null ?
+					// just use it, instead of trying to pull from the
+					// passkey
+					useLockKey :
+
+					// even if the local vault cache is still present
+					// and unlocked, re-retrieve the lock-key to ensure that
+					// if its caching has expired, the user is re-prompted
+					await getLockKey({
+						localIdentity: vaultEntry.accountID,
+						relyingPartyID: vaultEntry.rpID,
+						signal,
+					})
+			);
 
 			// lock-key retrieval successful?
 			if (vaultLockKey != null) {

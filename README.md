@@ -194,23 +194,7 @@ Any [options set under `keyOptions`](https://github.com/mylofi/local-data-lock?t
 
 **Note:** The `username` / `displayName` key-options illustrated above are not strictly required, but are strongly recommended; they're only passed along to the biometric passkey, as meta-data for such. The device will often use one or both values in its prompt dialogs, so these values should either be something the user has picked, or at least be something the user will recognize and trust. Also, there may very well be multiple passkeys associated with the same local account, so the username/display-name should be differentiated to help the users know which passkey they're authenticating with.
 
-### Manually Setting Lock-Key
-
-To manually set a new vault's lock-key -- for example, when importing a lock-key from another device:
-
-```js
-var vault = await connect({
-    storageType: "idb",
-    addNewVault: true,
-    keyOptions: {
-        // created by another vault instance, perhaps on
-        // another device
-        useLockKey: existingLockKey
-    }
-});
-```
-
-**Warning:** Be judicious with this feature. If for example you're synchronizing keypair identities between a user's multiple devices, this functionality can be useful. But otherwise, it's better (more secure!) to let **Local Vault** automatically generate and internally manage its cryptographic keypair.
+**Note:** When setting up a new vault instance can, [you *can* manually specify a lock-key](LOCK-KEY.md#manually-setting-lock-key-on-a-new-vault).
 
 ## Reconnecting a Vault
 
@@ -229,7 +213,7 @@ var vault = await connect({
 
 Saving the `vault.id` to use later does create a bit of a chicken-and-the-egg problem, because then you have to separately choose which client-side storage you want to persist that value in, and manage it appropriately. The value may even be saved at first but lost later.
 
-So you can instead use "discovery" mode to detect which vault to use, based on which passkey the user chooses to authenticate with:
+So you can instead use "vault discovery" mode to detect which vault to use, based on which passkey the user chooses to authenticate with:
 
 ```js
 var vault = await connect({
@@ -336,7 +320,7 @@ A vault instance also has the following methods:
 
 * `resetLockKey({ ...keyOptions })` (async): regenerate a new vault lock-key, as well as a new passkey to hold this lock-key; discards references to any previous passkeys in the local account.
 
-    A `useLockKey` key-option may be passed, to manually set the lock-key to reset the vault with; this may be useful if importing a key from another device.
+    A [`useLockKey` option *can* be passed](LOCK-KEY.md#manually-setting-lock-key-for-vault-instance-operations), to manually specify a lock-key to reset the vault with; this may be useful if importing a key from another device.
 
 * `keys()` (async): returns an array of all keys in the key-value store
 
@@ -344,11 +328,11 @@ A vault instance also has the following methods:
 
 * `__exportLockKey({ risky: "this is unsafe" })` (async): call this method (with the required `risky` argument as shown) to reveal the underlying lock-key for a vault; needs either an unlocked vault (freshly-available cached passkey authentication), or will prompt the user for re-authentication to unlock.
 
-    **Warning:** You should only use this method if you're intentionally circumventing the typical security protections of this library. For example: a valid use-case is for synchronizing a lock-key to another of the user's devices.
-
-    The lock-key object should be **treated opaquely**, meaning that you don't rely on its structure, don't make any changes to it, etc. See ["Lock Key Value Format"](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#lock-key-value-format) for information about serializing/deserializing the value for storage, transmission, etc.
+    **Warning:** Please see ["Exporting a vault lock-key"](LOCK-KEY.md#exporting-a-vault-lock-key) for more information about using this method responsibly and safely.
 
 **Note:** All of these methods, except `lock()`, are asynchronous (promise-returning), because they all potentially require passkey re-authentication if the vault's lock-key is not freshly available in the internal recently-used cache.
+
+Except for `lock()`, `addPasskey()`, and `__exportLockKey()`, [all these instance methods accept an optional `useLockKey` setting](LOCK-KEY.md#manually-setting-lock-key-for-vault-instance-operations).
 
 ## Cancelling Vault Operations
 

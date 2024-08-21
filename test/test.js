@@ -464,7 +464,8 @@ async function lockVault() {
 			showToast("Vault locked.");
 		}
 		catch (err) {
-			console.log(err);
+			logError(err);
+			showError("Locking vault failed.");
 		}
 		currentVault = null;
 		updateElements();
@@ -616,6 +617,8 @@ async function showVaultContents() {
 	}
 
 	async function renderEntries() {
+		Swal.resetValidationMessage();
+
 		entriesTableEl.innerHTML = "";
 		var entries = await currentVault.entries();
 		if (entries.length > 0) {
@@ -667,7 +670,18 @@ async function showVaultContents() {
 		addPropNameEl.value = addPropValueEl.value = "";
 		addPropNameEl.focus();
 
-		await currentVault.set(addPropName,addPropValue);
+		try {
+			let success = await currentVault.set(addPropName,addPropValue);
+			if (!success) {
+				throw new Error("set() failed");
+			}
+		}
+		catch (err) {
+			logError(err);
+			Swal.close();
+			showError("Failed adding property to vault.");
+			return;
+		}
 		return renderEntries();
 	}
 
@@ -683,7 +697,18 @@ async function showVaultContents() {
 		}
 		else if (targetEl.matches("button.del-btn")) {
 			cancelEvent(evt);
-			await currentVault.remove(parentRowEl.dataset.propName);
+			try {
+				let success = await currentVault.remove(parentRowEl.dataset.propName);
+				if (!success) {
+					throw new Error("remove() failed");
+				}
+			}
+			catch (err) {
+				logError(err);
+				Swal.close();
+				showError("Failed removing property from vault.");
+				return;
+			}
 			return renderEntries();
 		}
 	}
@@ -705,7 +730,15 @@ async function promptEditProp(propName,propValue) {
 	});
 
 	if (result.isConfirmed) {
-		await currentVault.set(propName,result.value);
+		try {
+			await currentVault.set(propName,result.value);
+		}
+		catch (err) {
+			logError(err);
+			Swal.close();
+			showError("Failed editing property in vault.");
+			return;
+		}
 	}
 	return showVaultContents();
 }
