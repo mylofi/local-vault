@@ -11,6 +11,12 @@ defineAdapter({
 	write,
 	find,
 	clear,
+	raw: {
+		has: hasFile,
+		get: readFile,
+		set: writeFile,
+		remove: deleteFile,
+	},
 });
 
 
@@ -86,6 +92,20 @@ async function clear(vaultID = null) {
 	}
 }
 
+async function hasFile(filename) {
+	// note: trick to skip `await` microtask when
+	// not a promise
+	rootFS = getRootFS();
+	rootFS = isPromise(rootFS) ? await rootFS : rootFS;
+	var keys = [];
+	for await (let key of rootFS.keys()) {
+		if (key == filename) {
+			return true;
+		}
+	}
+	return false;
+}
+
 async function readFile(filename) {
 	// note: trick to skip `await` microtask when
 	// not a promise
@@ -106,7 +126,8 @@ async function writeFile(filename,storageEntry) {
 	var fh = await rootFS.getFileHandle(filename,{ create: true, });
 	var file = await fh.createWritable();
 	await file.write(JSON.stringify(storageEntry));
-	return file.close();
+	await file.close();
+	return true;
 }
 
 async function deleteFile(filename) {
@@ -115,7 +136,8 @@ async function deleteFile(filename) {
 	rootFS = getRootFS();
 	rootFS = isPromise(rootFS) ? await rootFS : rootFS;
 
-	return rootFS.removeEntry(filename);
+	await rootFS.removeEntry(filename);
+	return true;
 }
 
 function getRootFS() {

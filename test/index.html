@@ -42,6 +42,7 @@ ul li { margin: 0.7rem; }
 	<li>Click 'detect (and open) vault', select the storage type (from step 1) -- but no need to enter the vault ID! -- and skip the timeout and authenticate with the newest passkey, thereby opening the vault dialog. Close the vault dialog.</li>
 	<li>Click 'reset vault lock-key', confirm the action, then enter a new username and display-name, and authenticate with the new passkey.</li>
 	<li>To verify the new vault lock-key works, click 'open vault' to see the vault's key-value entries. Close the vault dialog.</li>
+	<li>Verify that "Raw storage tests: PASS" is displayed below.</li>
 </ol>
 
 <p>When complete with testing:</p>
@@ -53,6 +54,9 @@ ul li { margin: 0.7rem; }
 
 <hr>
 
+<p>
+	Raw storage tests: <strong id="raw-storage-tests-result">...</strong>
+</p>
 <p>
 	<button type="button" id="setup-vault-btn">setup local vault</button>
 	<button type="button" id="detect-vault-btn">detect (and open) vault</button>

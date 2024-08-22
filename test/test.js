@@ -7,6 +7,7 @@ import "local-vault/src/adapter-idb";
 import "local-vault/src/adapter-opfs";
 import "local-vault/src/adapter-cookie";
 import {
+	rawStorage,
 	connect,
 	removeAll,
 	listLocalIdentities,
@@ -36,6 +37,7 @@ var openVaultBtn;
 var lockVaultBtn;
 var addPasskeyBtn;
 var resetVaultBtn;
+var rawStorageTestsResultsEl;
 
 var currentVault;
 
@@ -57,6 +59,7 @@ async function ready() {
 	lockVaultBtn = document.getElementById("lock-vault-btn");
 	addPasskeyBtn = document.getElementById("add-passkey-btn");
 	resetVaultBtn = document.getElementById("reset-vault-btn");
+	rawStorageTestsResultsEl = document.getElementById("raw-storage-tests-result");
 
 	setupVaultBtn.addEventListener("click",setupVault,false);
 	detectVaultBtn.addEventListener("click",detectVault,false);
@@ -67,6 +70,8 @@ async function ready() {
 	resetVaultBtn.addEventListener("click",resetVault,false);
 
 	updateElements();
+
+	await runRawStorageTests();
 }
 
 function updateElements() {
@@ -788,4 +793,66 @@ function createTimeoutToken() {
 	var ac = new AbortController();
 	var intv = setTimeout(() => ac.abort("Timeout!"),5000);
 	return { signal: ac.signal, intv, };
+}
+
+async function runRawStorageTests() {
+	var expectedResults = [
+		[ "idb", "has(1)", false ],
+		[ "idb", "set", true ],
+		[ "idb", "has(2)", true ],
+		[ "idb", "get", "world" ],
+		[ "idb", "remove", true ],
+		[ "local-storage", "has(1)", false ],
+		[ "local-storage", "set", true ],
+		[ "local-storage", "has(2)", true ],
+		[ "local-storage", "get", "world" ],
+		[ "local-storage", "remove", true ],
+		[ "session-storage", "has(1)", false ],
+		[ "session-storage", "set", true ],
+		[ "session-storage", "has(2)", true ],
+		[ "session-storage", "get", "world" ],
+		[ "session-storage", "remove", true ],
+		[ "cookie", "has(1)", false ],
+		[ "cookie", "set", true ],
+		[ "cookie", "has(2)", true ],
+		[ "cookie", "get", "world" ],
+		[ "cookie", "remove", true ],
+		[ "opfs", "has(1)", false ],
+		[ "opfs", "set", true ],
+		[ "opfs", "has(2)", true ],
+		[ "opfs", "get", "world" ],
+		[ "opfs", "remove", true ]
+	];
+	var testResults = [];
+
+	console.log("rawStorage tests running...");
+
+	var IDBStore = rawStorage("idb");
+	var LSStore = rawStorage("local-storage");
+	var SSStore = rawStorage("session-storage");
+	var CookieStore = rawStorage("cookie");
+	var OPFSStore = rawStorage("opfs");
+
+	var stores = [ IDBStore, LSStore, SSStore, CookieStore, OPFSStore ];
+	for (let store of stores) {
+		testResults.push([ store.storageType, "has(1)", await store.has("hello"), ]);
+		testResults.push([ store.storageType, "set", await store.set("hello","world"), ]);
+		testResults.push([ store.storageType, "has(2)", await store.has("hello"), ]);
+		testResults.push([ store.storageType, "get", await store.get("hello"), ]);
+		testResults.push([ store.storageType, "remove", await store.remove("hello"), ]);
+	}
+	var testsPassed = true;
+	for (let [ testIdx, testResult ] of testResults.entries()) {
+		if (JSON.stringify(testResult) != JSON.stringify(expectedResults[testIdx])) {
+			testsPassed = false;
+			console.log(`Expected: ${expectedResult} | Found: ${testResults}`);
+		}
+	}
+	if (testsPassed) {
+		rawStorageTestsResultsEl.innerText = "PASS";
+		console.log("all passed.");
+	}
+	else {
+		rawStorageTestsResultsEl.innerText = "FAIL (see console)";
+	}
 }

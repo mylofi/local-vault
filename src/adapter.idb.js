@@ -16,10 +16,20 @@ defineAdapter({
 	write,
 	find,
 	clear,
+	raw: {
+		has: hasRaw,
+		get: idbGet,
+		set: writeRaw,
+		remove: removeRaw,
+	},
 });
 
 
 // ***********************
+
+async function hasRaw(rawName) {
+	return ((await idbKeys()) || []).includes(rawName);
+}
 
 async function read(vaultID,vaultInfo) {
 	var vaultEntry = await idbGet(`local-vault-${vaultID}`);
@@ -33,8 +43,13 @@ async function read(vaultID,vaultInfo) {
 }
 
 async function write(vaultID,vaultInfo,vaultData) {
+	return writeRaw(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+}
+
+async function writeRaw(rawName,rawValue) {
 	try {
-		return idbSet(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+		await idbSet(rawName,rawValue);
+		return true;
 	}
 	catch (err) {
 		if (err.name == "QuotaExceededError") {
@@ -42,6 +57,11 @@ async function write(vaultID,vaultInfo,vaultData) {
 		}
 		throw err;
 	}
+}
+
+async function removeRaw(rawName) {
+	await idbDel(rawName);
+	return true;
 }
 
 async function find(search) {

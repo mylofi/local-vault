@@ -59,6 +59,60 @@ import { connect } from "..";
 
 You can load any or all of the adapters. But you must have at least one adapter defined, and calls to `connect()` must always specify a storage-type that matches one of those loaded adapters.
 
+### Raw Storage Access
+
+**Local Vault** automatically handles encryption (on write) and decryption (on read) for data being stored in a *vault* (via the methods on a [vault-instance](#setting-up-a-local-vault-instance)). For any important data in your application, you should prefer to use this approach to storage.
+
+However, some bits of data that you need *unencrypted* access to -- for example, reconnecting/unlocking a vault -- would present a chicken-and-the-egg problem if you stored it *in a locked vault*. For example, you might store the auto-generated vault-ID, or in a more advanced usage, you might [even store the vault's lock-key](LOCK-KEY.md).
+
+Instead of storing/retrieving such data with a vault-instance, you can access the raw underlying storage -- still with a friendly, consistent key-value style API -- using the `rawStorage()` method:
+
+```js
+import "@lo-fi/local-vault/adapter/idb";
+
+import { rawStorage, connect } from "..";
+
+var IDBStore = rawStorage("idb");
+var vaultID;
+
+// already have a vault setup?
+if (await IDBStore.has("vault-id")) {
+    // retrieve its vault-ID
+    vaultID = await IDBStore.get("vault-id");
+}
+
+// create or reconnect to vault
+var vault = await connect({
+    /* .. */
+
+    // add new vault?
+    addNewVault: (vaultID == null),
+
+    // or connect to existing (if found)
+    vaultID,
+
+    /* .. */
+});
+
+// new vault setup?
+if (vaultID == null) {
+    // store auto-generated vault-ID
+    await IDBStore.set("vault-id",vault.id);
+}
+```
+
+The four key-value oriented methods available on the raw-storage API are:
+
+* `has(name)`: has a value of `name` been set in this storage before?
+
+* `get(name)`: get a value of `name` (if any) from storage
+
+* `set(name,value)`: set a `value` at `name` into storage
+
+* `remove(name)`: remove `name` (if any) from storage
+
+**Warning:** Do not access values with the specific name prefix `"local-vault-"`, as you will conflict with the underlying managed vault storage entries.
+
 ### Storage Limitations
 
 [Client-side storage is notoriously volatile](https://web.dev/articles/storage-for-the-web). However, this library allows you to request the user's device to [treat client-side storage as *persistent*](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/persist):

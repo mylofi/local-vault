@@ -9,6 +9,12 @@ defineAdapter({
 	write,
 	find,
 	clear,
+	raw: {
+		has: hasCookie,
+		get: getCookie,
+		set: setCookie,
+		remove: removeCookie,
+	},
 });
 
 
@@ -27,7 +33,8 @@ function read(vaultID,vaultInfo) {
 
 function write(vaultID,vaultInfo,vaultData) {
 	try {
-		return setCookie(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+		setCookie(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+		return true;
 	}
 	catch (err) {
 		if (err.name == "QuotaExceededError") {
@@ -90,10 +97,16 @@ function getAllCookies() {
 	);
 }
 
+function hasCookie(cookieName) {
+	return (cookieName in getAllCookies());
+}
+
 function getCookie(name) {
-	return JSON.parse(
-		getAllCookies()[encodeURIComponent(name)] || "null"
-	);
+	var cookieValue = getAllCookies()[name];
+	if (cookieValue != null && cookieValue != "") {
+		try { return JSON.parse(cookieValue); } catch (err) {}
+	}
+	return cookieValue;
 }
 
 function setCookie(name,storageEntry) {
@@ -118,6 +131,7 @@ function setCookie(name,storageEntry) {
 		`maxage=${expiresSeconds}`,
 	].join("; ");
 	document.cookie = cookie;
+	return true;
 }
 
 function removeCookie(name) {
@@ -132,4 +146,5 @@ function removeCookie(name) {
 		`expires=${expires.toGMTString()}`,
 		"maxage=0"
 	].join("; ");
+	return true;
 }

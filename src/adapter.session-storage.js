@@ -9,29 +9,48 @@ defineAdapter({
 	write,
 	find,
 	clear,
+	raw: {
+		has: hasRaw,
+		get: readRaw,
+		set: writeRaw,
+		remove: removeRaw,
+	},
 });
 
 
 // ***********************
 
+function hasRaw(rawName) {
+	return (window.sessionStorage.getItem(rawName) !== null);
+}
+
 function read(vaultID,vaultInfo) {
-	var vaultEntryStr = window.sessionStorage.getItem(`local-vault-${vaultID}`);
-	if (vaultEntryStr != null) {
-		let vault = JSON.parse(vaultEntryStr);
-		return vault;
+	var vaultEntry = readRaw(`local-vault-${vaultID}`);
+	if (vaultEntry != null) {
+		return vaultEntry;
 	}
 
 	// create and return default vault entry
 	write(vaultID,vaultInfo,"");
-	return JSON.parse(window.sessionStorage.getItem(`local-vault-${vaultID}`));
+	return readRaw(`local-vault-${vaultID}`);
+}
+
+function readRaw(rawName) {
+	var rawValue = window.sessionStorage.getItem(rawName);
+	if (rawValue != null && rawValue != "") {
+		try { return JSON.parse(rawValue); } catch (err) {}
+	}
+	return rawValue;
 }
 
 function write(vaultID,vaultInfo,vaultData) {
+	return writeRaw(`local-vault-${vaultID}`,{ ...vaultInfo, data: vaultData, });
+}
+
+function writeRaw(rawName,rawValue) {
 	try {
-		window.sessionStorage.setItem(
-			`local-vault-${vaultID}`,
-			JSON.stringify({ ...vaultInfo, data: vaultData, })
-		);
+		window.sessionStorage.setItem(rawName,JSON.stringify(rawValue));
+		return true;
 	}
 	catch (err) {
 		if (err.name == "QuotaExceededError") {
@@ -41,6 +60,11 @@ function write(vaultID,vaultInfo,vaultData) {
 	}
 }
 
+function removeRaw(rawName) {
+	window.sessionStorage.removeItem(rawName);
+	return true;
+}
+
 function find(search) {
 	var searchEntries = Object.entries(search);
 	for (let i = 0; i < window.sessionStorage.length; i++) {
@@ -48,7 +72,7 @@ function find(search) {
 		let [ , vaultID, ] = (storageEntryProp.match(/^local-vault-([^]+)$/) || []);
 		// storage entry is a local-vault?
 		if (vaultID != null) {
-			let vaultEntry = JSON.parse(window.sessionStorage.getItem(storageEntryProp) || "null");
+			let vaultEntry = readRaw(storageEntryProp);
 			if (
 				// vault entry is non-empty?
 				vaultEntry != null &&
@@ -67,7 +91,7 @@ function find(search) {
 
 function clear(vaultID = null) {
 	if (vaultID != null) {
-		window.sessionStorage.removeItem(`local-vault-${vaultID}`);
+		removeRaw(`local-vault-${vaultID}`);
 	}
 	else {
 		// collect all local-vault IDs
@@ -81,7 +105,7 @@ function clear(vaultID = null) {
 
 		// remove all local-vault entries
 		for (let localVaultID of localVaultIDs) {
-			window.sessionStorage.removeItem(localVaultID);
+			removeRaw(localVaultID);
 		}
 	}
 }

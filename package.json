@@ -1,7 +1,7 @@
 {
 	"name": "@lo-fi/local-vault",
 	"description": "Store key-value data encrypted (biometric passkey protected), locally in the client",
-	"version": "0.12.2",
+	"version": "0.13.0",
 	"exports": {
 		".": "./dist/bundlers/lv.mjs",
 		"./adapter/local-storage": "./dist/bundlers/adapter.local-storage.mjs",

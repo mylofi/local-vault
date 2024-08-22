@@ -40,69 +40,54 @@ var lockKey = await vault.__exportLockKey({ risky: "this is unsafe" });
 
 The value in `lockKey` should be **treated opaquely**, meaning that you don't rely on its structure, don't make any changes to it, etc.
 
-Using the information described in ["Lock Key Value Format"](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#lock-key-value-format), you might define a helper utility like `serializeLockKey(..)`:
+Using the information described in ["Lock Key Value Format"](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#lock-key-value-format), you might define a helper utility like `packLockKey(..)`:
 
 ```js
 import { toBase64String } from "..";
 
-function serializeLockKey(lockKey) {
-    return JSON.stringify(
-        Object.fromEntries(
-            Object.entries(lockKey)
-            .map(([ prop, value ]) => [
-                prop,
-                (
-                    value instanceof Uint8Array &&
-                    value.buffer instanceof ArrayBuffer
-                ) ?
-                    toBase64String(value) :
-                    value
-            ])
-        )
+function packLockKey(lockKey) {
+    return Object.fromEntries(
+        Object.entries(lockKey)
+        .map(([ prop, value ]) => [
+            prop,
+            (
+                value instanceof Uint8Array &&
+                value.buffer instanceof ArrayBuffer
+            ) ?
+                toBase64String(value) :
+                value
+        ])
     );
 }
 ```
 
-With this helper, you can, for example, save a lock-key into `localStorage`, so you might retrieve it later on each visit/page-load:
+With this helper, you can for example save a vault's lock-key, using [the `rawStorage()` mechanism](README.md#raw-storage-access) to retrieve later on each visit/page-load:
 
 ```js
-var vault = await connect({ .. });
+import "@lo-fi/local-vault/adapter/idb";
+import { rawStorage, connect } from "..";
 
-var lockKey = await vault.__exportLockKey({ risky: "this is unsafe" });
-
-var lockKeyStr = serializeLockKey(lockKey);
-
-window.localStorage.setItem("lock-key",lockKeyStr);
-```
-
-**Note:** Instead of storing a lock-key in `localStorage`, you might transmit it (using a secure channel of some sort!) to another device; this might be useful if a user is replicating/synchronizing their data across multiple devices.
-
-### Simpler Approach: IV/seed
-
-Instead of preserving the entire lock-key object value, specifically its `iv` value (IV/seed used for the keypair) is enough to re-derive the full keypair; this is a `Uint8Array` value, so it likely needs to be converted to a base64 encoded string:
-
-```js
-import { connect, toBase64String } from "..";
+var IDBStore = rawStorage("idb");
 
 var vault = await connect({ .. });
-
 var lockKey = await vault.__exportLockKey({ risky: "this is unsafe" });
+var packedLockKey = packLockKey(lockKey);
 
-var ivStr = toBase64String(lockKey.iv);
+await IDBStore.set("lock-key",packedLockKey);
 ```
 
-To restore the full keypair object value from a serialized `iv` (either stored or transmitted), you'll need to use `fromBase64String()` to turn it back into a `Uint8Array` value, then pass that to [`deriveKey()`, as explained here](#manually-deriving-a-lock-key).
+**Note:** Instead of storing the lock-key, you might transmit it (using a secure channel of course!) to another device; this might be useful if a user is replicating/synchronizing their data across multiple devices.
 
-### De-serializing full lock-key
+### Unpacking lock-key
 
-[As explained in more detail here](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#lock-key-value-format), a utility for de-serializing lock-keys might look like this:
+[As explained in more detail here](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#lock-key-value-format), a utility for unpacking a lock-key (as it was stored) might look like this:
 
 ```js
 import { fromBase64String } from "..";
 
-function deserializeLockKey(lockKeyStr) {
+function unpackLockKey(packedLockedKey) {
     return Object.fromEntries(
-        Object.entries(JSON.parse(lockKeyStr))
+        Object.entries(packedLockedKey)
         .map(([ prop, value ]) => [
             prop,
             (
@@ -119,14 +104,33 @@ function deserializeLockKey(lockKeyStr) {
 }
 ```
 
-With this helper method, you can pull a serialized lock-key value (JSON string holding base64 encoded binary values) from device storage, or received a transmitted value from another device, and restore the full lock-key value object:
+With this helper method, you can unpack lock-key object (holding base64 encoded binary values) -- either [pulled from raw-storage](README.md#raw-storage-access), or received transmitted from another device:
 
 ```js
-// for example:
-var lockKeyStr = window.localStorage.getItem("lock-key");
+import "@lo-fi/local-vault/adapter/idb";
+import { rawStorage } from "..";
 
-var lockKey = deserializeLockKey(lockKeyStr);
+var IDBStore = rawStorage("idb");
+
+var lockKey = unpackLockKey(
+    await IDBStore.get("lock-key")
+);
 ```
+
+### Simpler Approach: IV/seed
+
+Instead of preserving/restoring the entire lock-key object value, just its `iv` value (IV/seed used for the keypair) is enough to re-derive the full keypair; this is a `Uint8Array` value, so it should be converted to a base64 encoded string:
+
+```js
+import "@lo-fi/local-vault/adapter/idb";
+import { rawStorage, connect, toBase64String } from "..";
+
+/* .. */
+
+await IDBStore.set("lock-key-iv",toBase64String(lockKey.iv));
+```
+
+To restore the full keypair object value from a serialized `iv` (either stored or transmitted), you'll need to use `fromBase64String()` to turn it back into a `Uint8Array` value, then pass that to [`deriveKey()`, as explained previously here](#manually-dering-a-lock-key).
 
 ## Manually setting lock-key on a new vault
 

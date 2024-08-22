@@ -32,6 +32,7 @@ export {
 
 	// main library API:
 	defineAdapter,
+	rawStorage,
 	connect,
 	removeAll,
 	keepStorage,
@@ -46,6 +47,7 @@ var publicAPI = {
 
 	// main library API:
 	defineAdapter,
+	rawStorage,
 	connect,
 	removeAll,
 	keepStorage,
@@ -61,12 +63,22 @@ function defineAdapter({
 	write,
 	find,
 	clear,
-}) {
+	raw,
+} = {}) {
 	if (!(storageType in adapters)) {
-		adapters[storageType] = { read, write, find, clear, };
+		adapters[storageType] = { read, write, find, clear, raw: { storageType, ...raw, }, };
 	}
 	else {
 		throw new Error(`Storage type ('${storageType}') already defined`);
+	}
+}
+
+function rawStorage(storageType) {
+	if (storageType in adapters) {
+		return adapters[storageType].raw;
+	}
+	else {
+		throw new Error(`Unknown storage type ('${storageType}')`);
 	}
 }
 
@@ -83,7 +95,7 @@ async function connect({
 	addNewVault = false,
 	discoverVault = false,
 	signal: cancelConnection,
-}) {
+} = {}) {
 	if (storageType in adapters) {
 		if (discoverVault) {
 			// protect against invalid usage
