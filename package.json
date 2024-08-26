@@ -1,7 +1,7 @@
 {
 	"name": "@lo-fi/local-vault",
 	"description": "Store key-value data encrypted (biometric passkey protected), locally in the client",
-	"version": "0.13.0",
+	"version": "0.14.0",
 	"exports": {
 		".": "./dist/bundlers/lv.mjs",
 		"./adapter/local-storage": "./dist/bundlers/adapter.local-storage.mjs",
@@ -31,8 +31,8 @@
 		"prepublishOnly": "npm run build:all"
 	},
 	"dependencies": {
-		"@lo-fi/local-data-lock": "~0.11.2",
-		"idb-keyval": "~6.2.1"
+		"@lo-fi/client-storage": "~0.9.0",
+		"@lo-fi/local-data-lock": "~0.12.0"
 	},
 	"devDependencies": {
 		"micromatch": "~4.0.5",

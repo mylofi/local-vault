@@ -42,7 +42,7 @@ ul li { margin: 0.7rem; }
 	<li>Click 'detect (and open) vault', select the storage type (from step 1) -- but no need to enter the vault ID! -- and skip the timeout and authenticate with the newest passkey, thereby opening the vault dialog. Close the vault dialog.</li>
 	<li>Click 'reset vault lock-key', confirm the action, then enter a new username and display-name, and authenticate with the new passkey.</li>
 	<li>To verify the new vault lock-key works, click 'open vault' to see the vault's key-value entries. Close the vault dialog.</li>
-	<li>Verify that "Raw storage tests: PASS" is displayed below.</li>
+	<li>Verify that "Raw storage tests: PASS" is displayed below. <strong>Note:</strong> The OPFS adapter only works in Chrome/Firefox, so those specific raw storage tests will fail in other browsers.</li>
 </ol>
 
 <p>When complete with testing:</p>
@@ -77,20 +77,27 @@ ul li { margin: 0.7rem; }
 {
 	"imports": {
 		"local-vault/src": "./src/lv.js",
+		"local-vault/src/adapter-idb": "./src/adapter.idb.js",
 		"local-vault/src/adapter-local-storage": "./src/adapter.local-storage.js",
 		"local-vault/src/adapter-session-storage": "./src/adapter.session-storage.js",
-		"local-vault/src/adapter-idb": "./src/adapter.idb.js",
 		"local-vault/src/adapter-cookie": "./src/adapter.cookie.js",
 		"local-vault/src/adapter-opfs": "./src/adapter.opfs.js",
 
 		"local-vault/dist": "./dist/auto/lv.js",
+		"local-vault/dist/adapter-idb": "./dist/auto/adapter.idb.js",
 		"local-vault/dist/adapter-local-storage": "./dist/auto/adapter.local-storage.js",
 		"local-vault/dist/adapter-session-storage": "./dist/auto/adapter.session-storage.js",
-		"local-vault/dist/adapter-idb": "./dist/auto/adapter.idb.js",
 		"local-vault/dist/adapter-cookie": "./dist/auto/adapter.cookie.js",
 		"local-vault/dist/adapter-opfs": "./dist/auto/adapter.opfs.js",
 
-		"idb-keyval": "./dist/auto/external/idb-keyval.js",
+		"@lo-fi/client-storage/idb": "./dist/auto/external/@lo-fi/client-storage/adapter.idb.mjs",
+		"@lo-fi/client-storage/local-storage": "./dist/auto/external/@lo-fi/client-storage/adapter.local-storage.mjs",
+		"@lo-fi/client-storage/session-storage": "./dist/auto/external/@lo-fi/client-storage/adapter.session-storage.mjs",
+		"@lo-fi/client-storage/cookie": "./dist/auto/external/@lo-fi/client-storage/adapter.cookie.mjs",
+		"@lo-fi/client-storage/opfs": "./dist/auto/external/@lo-fi/client-storage/adapter.opfs.mjs",
+
+		"idb-keyval": "./dist/auto/external/@lo-fi/client-storage/external/idb-keyval.js",
+
 		"@lo-fi/local-data-lock": "./dist/auto/external/@lo-fi/local-data-lock/ldl.js",
 		"@lo-fi/webauthn-local-client": "./dist/auto/external/@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js"
 	}

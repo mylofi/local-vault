@@ -1,9 +1,9 @@
 // note: these module specifiers come from the import-map
 //    in index.html; swap "src" for "dist" here to test
 //    against the dist/* files
+import "local-vault/src/adapter-idb";
 import "local-vault/src/adapter-local-storage";
 import "local-vault/src/adapter-session-storage";
-import "local-vault/src/adapter-idb";
 import "local-vault/src/adapter-opfs";
 import "local-vault/src/adapter-cookie";
 import {
@@ -798,30 +798,50 @@ function createTimeoutToken() {
 async function runRawStorageTests() {
 	var expectedResults = [
 		[ "idb", "has(1)", false ],
+		[ "idb", "get(1)", null ],
 		[ "idb", "set", true ],
 		[ "idb", "has(2)", true ],
-		[ "idb", "get", "world" ],
+		[ "idb", "get(2)", "world" ],
+		[ "idb", "keys(1)", [ "hello", ], ],
+		[ "idb", "entries", [ [ "hello", "world", ], ], ],
 		[ "idb", "remove", true ],
+		[ "idb", "keys(2)", [], ],
 		[ "local-storage", "has(1)", false ],
+		[ "local-storage", "get(1)", null ],
 		[ "local-storage", "set", true ],
 		[ "local-storage", "has(2)", true ],
-		[ "local-storage", "get", "world" ],
+		[ "local-storage", "get(2)", "world" ],
+		[ "local-storage", "keys(1)", [ "hello", ], ],
+		[ "local-storage", "entries", [ [ "hello", "world", ], ], ],
 		[ "local-storage", "remove", true ],
+		[ "local-storage", "keys(2)", [], ],
 		[ "session-storage", "has(1)", false ],
+		[ "session-storage", "get(1)", null ],
 		[ "session-storage", "set", true ],
 		[ "session-storage", "has(2)", true ],
-		[ "session-storage", "get", "world" ],
+		[ "session-storage", "get(2)", "world" ],
+		[ "session-storage", "keys(1)", [ "hello", ], ],
+		[ "session-storage", "entries", [ [ "hello", "world", ], ], ],
 		[ "session-storage", "remove", true ],
+		[ "session-storage", "keys(2)", [], ],
 		[ "cookie", "has(1)", false ],
+		[ "cookie", "get(1)", null ],
 		[ "cookie", "set", true ],
 		[ "cookie", "has(2)", true ],
-		[ "cookie", "get", "world" ],
+		[ "cookie", "get(2)", "world" ],
+		[ "cookie", "keys(1)", [ "hello", ], ],
+		[ "cookie", "entries", [ [ "hello", "world", ], ], ],
 		[ "cookie", "remove", true ],
+		[ "cookie", "keys(2)", [], ],
 		[ "opfs", "has(1)", false ],
+		[ "opfs", "get(1)", null ],
 		[ "opfs", "set", true ],
 		[ "opfs", "has(2)", true ],
-		[ "opfs", "get", "world" ],
-		[ "opfs", "remove", true ]
+		[ "opfs", "get(2)", "world" ],
+		[ "opfs", "keys(1)", [ "hello", ], ],
+		[ "opfs", "entries", [ [ "hello", "world", ], ], ],
+		[ "opfs", "remove", true ],
+		[ "opfs", "keys(2)", [], ],
 	];
 	var testResults = [];
 
@@ -836,16 +856,21 @@ async function runRawStorageTests() {
 	var stores = [ IDBStore, LSStore, SSStore, CookieStore, OPFSStore ];
 	for (let store of stores) {
 		testResults.push([ store.storageType, "has(1)", await store.has("hello"), ]);
+		testResults.push([ store.storageType, "get(1)", await store.get("hello"), ]);
 		testResults.push([ store.storageType, "set", await store.set("hello","world"), ]);
 		testResults.push([ store.storageType, "has(2)", await store.has("hello"), ]);
-		testResults.push([ store.storageType, "get", await store.get("hello"), ]);
+		testResults.push([ store.storageType, "get(2)", await store.get("hello"), ]);
+		testResults.push([ store.storageType, "keys(1)", filterLocalVaults(await store.keys()), ]);
+		testResults.push([ store.storageType, "entries", filterLocalVaults(await store.entries()), ]);
 		testResults.push([ store.storageType, "remove", await store.remove("hello"), ]);
+		testResults.push([ store.storageType, "keys(2)", filterLocalVaults(await store.keys()), ]);
 	}
 	var testsPassed = true;
 	for (let [ testIdx, testResult ] of testResults.entries()) {
-		if (JSON.stringify(testResult) != JSON.stringify(expectedResults[testIdx])) {
+		if (JSON.stringify(testResult[2]) != JSON.stringify(expectedResults[testIdx][2])) {
 			testsPassed = false;
-			console.log(`Expected: ${expectedResult} | Found: ${testResults}`);
+			console.log(`(${testIdx}) ${testResult[0]}:${testResult[1]} failed`);
+			console.log(`  Expected: ${expectedResults[testIdx][2]}, but found: ${testResult[2]}`);
 		}
 	}
 	if (testsPassed) {
@@ -855,4 +880,21 @@ async function runRawStorageTests() {
 	else {
 		rawStorageTestsResultsEl.innerText = "FAIL (see console)";
 	}
+}
+
+function filterLocalVaults(vals) {
+	if (vals.length > 0) {
+		// entries?
+		if (Array.isArray(vals[0])) {
+			return vals.filter(([ name, value ]) => (
+				!/^local-vault-.+/.test(name)
+			));
+		}
+		else {
+			return vals.filter(name => (
+				!/^local-vault-.+/.test(name)
+			));
+		}
+	}
+	return vals;
 }

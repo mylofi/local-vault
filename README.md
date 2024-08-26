@@ -21,17 +21,17 @@ await vault.get("Hello");               // "World!"
 
 ## Overview
 
-A *local vault* instance is a simple key-value store (`get()`, `set()`, etc), backed by [your choice among various client-side storage mechanisms](#client-side-storage-adapters) (`localStorage` / `sessionStorage`, IndexedDB, cookies, and OPFS).
+A *local vault* instance is a simple key-value store (`get()`, `set()`, etc), backed by [your choice among various client-side storage mechanisms](#client-side-storage-adapters) (`localStorage` / `sessionStorage`, IndexedDB, cookies, and OPFS) -- powered by the [**Client Storage** library's adapters](https://github.com/mylofi/client-storage).
 
-The primary feature of this library is automatically handling encryption (on write) and decryption (on read) from a local vault's data -- so data is always encrypted at-rest -- all client-side with no servers.
+The main feature of this library is automatically handling encryption (on write) and decryption (on read) from a local vault's data -- so data is always encrypted at-rest -- all client-side with no servers.
 
-The cryptographic encryption/decryption key is furthermore [protected locally in the client in a biometric passkey (i.e., authenticator, secure enclave, etc)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work). Users can thus safely access their protected data with a simple biometric passkey authentication -- no troublesome passwords, and no privacy-eroding remote servers!
+The cryptographic encryption/decryption key is furthermore [protected locally in the client in a biometric passkey (i.e., authenticator, secure enclave, etc)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work). Users can safely access their protected data with a simple biometric passkey authentication -- no troublesome passwords, and no privacy-eroding remote servers!
 
-**Local Vault** directly depends on [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**WebAuthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
+**Local Vault** directly depends on [**Client Storage**](https://github.com/mylofi/client-storage), as well as [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**WebAuthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
 
 ## Client Side Storage Adapters
 
-**Local Vault** ships with these five adapters, for choosing where/how on the client to store the encrypted vault data:
+**Local Vault** ships with adapters ([powered by the corresponding **Client Storage** adapters](https://github.com/mylofi/client-storage?tab=readme-ov-file#client-side-storage-adapters)) for these browser storage mechanisms:
 
 * `idb`: [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
 
@@ -57,15 +57,15 @@ import "@lo-fi/local-vault/adapter/idb";
 import { connect } from "..";
 ```
 
-You can load any or all of the adapters. But you must have at least one adapter defined, and calls to `connect()` must always specify a storage-type that matches one of those loaded adapters.
+You can load any or all of the adapters. But you must have at least one adapter defined, and calls to `connect()` must always specify a storage-type that matches one of the loaded adapters.
 
 ### Raw Storage Access
 
 **Local Vault** automatically handles encryption (on write) and decryption (on read) for data being stored in a *vault* (via the methods on a [vault-instance](#setting-up-a-local-vault-instance)). For any important data in your application, you should prefer to use this approach to storage.
 
-However, some bits of data that you need *unencrypted* access to -- for example, reconnecting/unlocking a vault -- would present a chicken-and-the-egg problem if you stored it *in a locked vault*. For example, you might store the auto-generated vault-ID, or in a more advanced usage, you might [even store the vault's lock-key](LOCK-KEY.md).
+However, some bits of data that you need *unencrypted* access to -- for example, when reconnecting/unlocking a vault -- would present a chicken-and-the-egg problem if you stored that data *in a locked vault*. For example, you might store the auto-generated vault-ID, or in a more advanced usage, you might [even store the vault's lock-key](LOCK-KEY.md). Clearly, *these bits of data* cannot be encrypted by their own vault.
 
-Instead of storing/retrieving such data with a vault-instance, you can access the raw underlying storage -- still with a friendly, consistent key-value style API -- using the `rawStorage()` method:
+Instead of storing/retrieving such data within a vault-instance, you can access the raw underlying storage -- with a friendly, consistent key-value style API ([as provided by **Client Storage**](https://github.com/mylofi/client-storage?tab=readme-ov-file#client-storage-api)) -- accessed via the `rawStorage()` method:
 
 ```js
 import "@lo-fi/local-vault/adapter/idb";
@@ -101,17 +101,9 @@ if (vaultID == null) {
 }
 ```
 
-The four key-value oriented methods available on the raw-storage API are:
+The [raw-storage API available is documented here](https://github.com/mylofi/client-storage?tab=readme-ov-file#client-storage-api).
 
-* `has(name)`: has a value of `name` been set in this storage before?
-
-* `get(name)`: get a value of `name` (if any) from storage
-
-* `set(name,value)`: set a `value` at `name` into storage
-
-* `remove(name)`: remove `name` (if any) from storage
-
-**Warning:** Do not access values with the specific name prefix `"local-vault-"`, as you will conflict with the underlying managed vault storage entries.
+**Warning:** Do not access/modify any values in the raw-storage with a specific name prefix of `"local-vault-"`, as you will interfere with the underlying managed vault storage entries.
 
 ### Storage Limitations
 
@@ -133,46 +125,7 @@ else {
 }
 ```
 
-Moreover, some client storage mechanisms have different storage limits, which in some cases may be rather small (i.e., 5MB for Local-Storage, or 1KB for cookies). Be careful with `set()` calls: look for the [`QuotaExceededError` DOM exception](https://developer.mozilla.org/en-US/docs/Web/API/DOMException#quotaexceedederror) being thrown, and determine what data can be freed up, or potentially switch to another storage mechanism with higher limits.
-
-For example:
-
-```js
-try {
-    vault.set("app-data",allMyAppData);
-}
-catch (err) {
-    if (err.reason?.name == "QuotaExceededError") {
-        // handle storage limit failure!
-    }
-}
-```
-
-#### Web Storage (`localStorage`, `sessionStorage`)
-
-The web storage mechanisms (`localStorage`, `sessionStorage`) are by far the most common place web applications storage client-side data. However, there are some factors to consider when using the `local-storage` / `session-storage` adapters.
-
-Each mechanism is size-limited to 5MB, on most all browsers/devices. And they are only available from main browser threads, not in workers (Web Workers, Service Workers).
-
-#### Cookies
-
-The `cookie` adapter stores vault data in browser cookies. There are however some strong caveats to consider before choosing this storage mechanism.
-
-Cookies are limited to ~4KB. Moreover, the provided data object has been JSON-serialized, encrypted and then base64 string encoded, then *that value* has been put into another object that's JSON-serialized, and that string (the actual cookie value) is URI-encoded (e.g, replacing `" "` with `%20`, etc). Taking into account all these steps that inflate your data size further towards the 4KB limit, you might only be able to squeeze ~2-3KB of original application data in, under the limit.
-
-Also, cookies are typically sent on *every request* to a first-party origin server (images, CSS, fetch calls, etc). So that data (encrypted, of course) will be sent remotely, and will significantly weigh down all those requests.
-
-Moreover, cookies are never "persistent" storage, and are subject to both expirations (maximum allowed is ~400 days out from the last update) and to users clearing them.
-
-All these concerns considered, the `cookie` adapter *really should not be used* except as a last resort, for small amounts of data. For example, your app might use this storage as a temporary location if normal storage quota has been reached, and later synchronize/migrate/backup off-device, etc.
-
-#### Origin Private File System
-
-The [Origin Private File System](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system) (OPFS) web feature can be used to read/write "files" in a virtual filesystem on the client's device (private to the page's origin). The `opfs` adapter provided with this library creates JSON "files" in this OPFS to store the vault data, one per vault.
-
-Be aware: [the ability to asynchronously `write()`](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemWritableFileStream/write#browser_compatibility) on the main browser thread, into OPFS, is currently only supported on desktop (not mobile!) Chromium and Firefox browsers.
-
-However, there is [widespread browser/device support for synchronous `write()`](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemFileHandle/createSyncAccessHandle#browser_compatibility) into OPFS, if done off-thread in a background worker (Web Worker, Service Worker). The `opfs` adapter does *not currently* support this approach, but it may in the future. Developers can also write their own such adapter, using the `defineAdapter()` method of **Local Vault**.
+For further information about client-side storage limitations, and guidance in choosing which mechanism to use, [read the documentation for **Client Storage**](https://github.com/mylofi/client-storage?tab=readme-ov-file#storage-limitations).
 
 ## Deployment / Import
 
@@ -208,7 +161,7 @@ else {
 
 A "local vault" is a JS object (JSON compatible), which is actually stored in the [client storage mechanism](#client-side-storage-adapters) you choose, either directly (for IndexedDB) or as a JSON serialized string.
 
-The local-vault object has the following three properties:
+The stored local-vault object has the following three properties:
 
 * `accountID` (string): holding the ID of the [*local account* attached to one or more device passkeys](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#registering-a-local-account-and-lock-key-keypair), each of which [hold the (same) encryption/decryption cryptographic key](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work)
 
@@ -216,13 +169,13 @@ The local-vault object has the following three properties:
 
 * `data` (string): holds the encrypted data, in base64 encoding
 
-**NOTE:** This local-vault object is *not* something your code should retrieve or modify in any way, directly. Instead, you'll use the methods on the vault-instance, as described in the next section.
+**WARNING:** This local-vault object is *not* something your code should directly retrieve or modify in any way. Instead, you'll use the methods on the vault-instance, as described in the next section.
 
 ## Setting up a local vault instance
 
 The vault-instance, created from a `connect()` call, exposes a simple API (`get()`, `set()`, etc) for managing key-value style data access. Encryption and key-management is all handled automatically while interacting with this vault-instance.
 
-To setup a new vault-instance (using the IDB storage type):
+To setup a new vault-instance (e.g., using the IDB storage type):
 
 ```js
 import "@lo-fi/local-vault/adapter-idb";
@@ -230,7 +183,7 @@ import { connect } from "..";
 
 // new vault-instance
 var vault = await connect({
-    storageType: "idb",
+    storageType: "idb",     // required
     addNewVault: true,
     keyOptions: {
         username: "passkey-user",
@@ -238,8 +191,8 @@ var vault = await connect({
     }
 });
 
-vault.id;               // ".." (auto-generated string)
-vault.storageType;      // "idb"
+vault.id;                   // ".." (auto-generated string)
+vault.storageType;          // "idb"
 ```
 
 The `storageType` setting is required on every `connect()` call. You'll likely do all your vault storage in *one* storage mechanism, so this is probably a fixed value you configure once in your app code -- rather than being an option the user chooses, for example.

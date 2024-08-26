@@ -74,11 +74,11 @@ function defineAdapter({
 }
 
 function rawStorage(storageType) {
-	if (storageType in adapters) {
+	if (storageType in adapters && adapters[storageType].raw != null) {
 		return adapters[storageType].raw;
 	}
 	else {
-		throw new Error(`Unknown storage type ('${storageType}')`);
+		throw new Error(`Raw-storage type ('${storageType}') unknown or unavailable`);
 	}
 }
 
