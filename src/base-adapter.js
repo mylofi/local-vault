@@ -31,7 +31,8 @@ function baseAdapter(clientStore) {
 
 	async function find(search) {
 		var searchEntries = Object.entries(search);
-		for (let [ storageEntryProp, vaultEntry, ] of clientStore.entries()) {
+
+		for (let [ storageEntryProp, vaultEntry, ] of (await clientStore.entries())) {
 			let [ , vaultID, ] = (storageEntryProp.match(/^local-vault-([^]+)$/) || []);
 			if (
 				// storage entry is a local-vault?

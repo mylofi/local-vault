@@ -16,9 +16,13 @@ The plugins for Astro, Vite, and Webpack are included in the `bundler-plugins/` 
 
     **Note:** this is *not* the same as `node_modules/@lo-fi/local-vault/dist/auto/lv.js`, which is only intended [for web application projects WITHOUT a bundler](NON-BUNDLERS.md)
 
-* `node_modules/@lo-fi/local-vault/dist/bundlers/adapter.*.mjs`
+* `node_modules/@lo-fi/local-vault/dist/bundlers/base-adapter.mjs`
 
-* `node_modules/@lo-fi/client-storage/dist/adapter.*.mjs`
+* storage adapters (despite naming similarities, these two sets of files are different):
+
+    * `node_modules/@lo-fi/local-vault/dist/bundlers/adapter.*.mjs`
+
+    * `node_modules/@lo-fi/client-storage/dist/adapter.*.mjs`
 
 * `node_modules/@lo-fi/local-data-lock/dist/bundlers/ldl.mjs`
 

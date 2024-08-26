@@ -412,8 +412,8 @@ async function removeAllVaults() {
 	if (confirmResult.isConfirmed) {
 		removeAll();
 		clearLockKeyCache();
-		for (let localIdentity of listLocalIdentities()) {
-			removeLocalAccount(localIdentity);
+		for (let localIdentity of (await listLocalIdentities())) {
+			await removeLocalAccount(localIdentity);
 		}
 		currentVault = null;
 		updateElements();
@@ -799,49 +799,54 @@ async function runRawStorageTests() {
 	var expectedResults = [
 		[ "idb", "has(1)", false ],
 		[ "idb", "get(1)", null ],
-		[ "idb", "set", true ],
+		[ "idb", "set(1)", true ],
 		[ "idb", "has(2)", true ],
 		[ "idb", "get(2)", "world" ],
-		[ "idb", "keys(1)", [ "hello", ], ],
-		[ "idb", "entries", [ [ "hello", "world", ], ], ],
+		[ "idb", "set(2)", true ],
+		[ "idb", "keys(1)", [ "hello", "meaning", ], ],
+		[ "idb", "entries", [ [ "hello", "world", ], [ "meaning", { ofLife: 42, }, ], ], ],
 		[ "idb", "remove", true ],
-		[ "idb", "keys(2)", [], ],
+		[ "idb", "keys(2)", [ "meaning", ], ],
 		[ "local-storage", "has(1)", false ],
 		[ "local-storage", "get(1)", null ],
-		[ "local-storage", "set", true ],
+		[ "local-storage", "set(1)", true ],
 		[ "local-storage", "has(2)", true ],
 		[ "local-storage", "get(2)", "world" ],
-		[ "local-storage", "keys(1)", [ "hello", ], ],
-		[ "local-storage", "entries", [ [ "hello", "world", ], ], ],
+		[ "local-storage", "set(2)", true ],
+		[ "local-storage", "keys(1)", [ "hello", "meaning", ], ],
+		[ "local-storage", "entries", [ [ "hello", "world", ], [ "meaning", { ofLife: 42, }, ], ], ],
 		[ "local-storage", "remove", true ],
-		[ "local-storage", "keys(2)", [], ],
+		[ "local-storage", "keys(2)", [ "meaning", ], ],
 		[ "session-storage", "has(1)", false ],
 		[ "session-storage", "get(1)", null ],
-		[ "session-storage", "set", true ],
+		[ "session-storage", "set(1)", true ],
 		[ "session-storage", "has(2)", true ],
 		[ "session-storage", "get(2)", "world" ],
-		[ "session-storage", "keys(1)", [ "hello", ], ],
-		[ "session-storage", "entries", [ [ "hello", "world", ], ], ],
+		[ "session-storage", "set(2)", true ],
+		[ "session-storage", "keys(1)", [ "hello", "meaning", ], ],
+		[ "session-storage", "entries", [ [ "hello", "world", ], [ "meaning", { ofLife: 42, }, ], ], ],
 		[ "session-storage", "remove", true ],
-		[ "session-storage", "keys(2)", [], ],
+		[ "session-storage", "keys(2)", [ "meaning", ], ],
 		[ "cookie", "has(1)", false ],
 		[ "cookie", "get(1)", null ],
-		[ "cookie", "set", true ],
+		[ "cookie", "set(1)", true ],
 		[ "cookie", "has(2)", true ],
 		[ "cookie", "get(2)", "world" ],
-		[ "cookie", "keys(1)", [ "hello", ], ],
-		[ "cookie", "entries", [ [ "hello", "world", ], ], ],
+		[ "cookie", "set(2)", true ],
+		[ "cookie", "keys(1)", [ "hello", "meaning", ], ],
+		[ "cookie", "entries", [ [ "hello", "world", ], [ "meaning", { ofLife: 42, }, ], ], ],
 		[ "cookie", "remove", true ],
-		[ "cookie", "keys(2)", [], ],
+		[ "cookie", "keys(2)", [ "meaning", ], ],
 		[ "opfs", "has(1)", false ],
 		[ "opfs", "get(1)", null ],
-		[ "opfs", "set", true ],
+		[ "opfs", "set(1)", true ],
 		[ "opfs", "has(2)", true ],
 		[ "opfs", "get(2)", "world" ],
-		[ "opfs", "keys(1)", [ "hello", ], ],
-		[ "opfs", "entries", [ [ "hello", "world", ], ], ],
+		[ "opfs", "set(2)", true ],
+		[ "opfs", "keys(1)", [ "hello", "meaning", ], ],
+		[ "opfs", "entries", [ [ "hello", "world", ], [ "meaning", { ofLife: 42, }, ], ], ],
 		[ "opfs", "remove", true ],
-		[ "opfs", "keys(2)", [], ],
+		[ "opfs", "keys(2)", [ "meaning", ], ],
 	];
 	var testResults = [];
 
@@ -857,13 +862,14 @@ async function runRawStorageTests() {
 	for (let store of stores) {
 		testResults.push([ store.storageType, "has(1)", await store.has("hello"), ]);
 		testResults.push([ store.storageType, "get(1)", await store.get("hello"), ]);
-		testResults.push([ store.storageType, "set", await store.set("hello","world"), ]);
+		testResults.push([ store.storageType, "set(1)", await store.set("hello","world"), ]);
 		testResults.push([ store.storageType, "has(2)", await store.has("hello"), ]);
 		testResults.push([ store.storageType, "get(2)", await store.get("hello"), ]);
-		testResults.push([ store.storageType, "keys(1)", filterLocalVaults(await store.keys()), ]);
-		testResults.push([ store.storageType, "entries", filterLocalVaults(await store.entries()), ]);
+		testResults.push([ store.storageType, "set(2)", await store.set("meaning",{ ofLife: 42, }), ]);
+		testResults.push([ store.storageType, "keys(1)", sortKeys(filterLocalMetadata(await store.keys())), ]);
+		testResults.push([ store.storageType, "entries", sortKeys(filterLocalMetadata(await store.entries())), ]);
 		testResults.push([ store.storageType, "remove", await store.remove("hello"), ]);
-		testResults.push([ store.storageType, "keys(2)", filterLocalVaults(await store.keys()), ]);
+		testResults.push([ store.storageType, "keys(2)", sortKeys(filterLocalMetadata(await store.keys())), ]);
 	}
 	var testsPassed = true;
 	for (let [ testIdx, testResult ] of testResults.entries()) {
@@ -882,17 +888,35 @@ async function runRawStorageTests() {
 	}
 }
 
-function filterLocalVaults(vals) {
+function filterLocalMetadata(vals) {
 	if (vals.length > 0) {
 		// entries?
 		if (Array.isArray(vals[0])) {
 			return vals.filter(([ name, value ]) => (
-				!/^local-vault-.+/.test(name)
+				!/^local-((vault-.+)|(identities))/.test(name)
 			));
 		}
 		else {
 			return vals.filter(name => (
-				!/^local-vault-.+/.test(name)
+				!/^local-((vault-.+)|(identities))/.test(name)
+			));
+		}
+	}
+	return vals;
+}
+
+function sortKeys(vals) {
+	if (vals.length > 0) {
+		vals = [ ...vals ];
+		// entries?
+		if (Array.isArray(vals[0])) {
+			return vals.sort(([ name1, ],[ name2, ]) => (
+				name1.localeCompare(name2)
+			));
+		}
+		else {
+			return vals.sort((name1,name2) => (
+				name1.localeCompare(name2)
 			));
 		}
 	}

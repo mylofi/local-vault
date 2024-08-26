@@ -103,7 +103,7 @@ async function connect({
 				throw new Error("Explicit lock-key not allowed in vault-discovery mode");
 			}
 
-			let localIdentities = listLocalIdentities();
+			let localIdentities = await listLocalIdentities();
 
 			// attempt to discover lock-key from chosen passkey
 			let vaultLockKey = await getLockKey({
@@ -540,7 +540,9 @@ async function getVaultEntry(storageType,vaultID) {
 function unlockVaultEntry(vaultEntry,vaultLockKey) {
 	if (typeof vaultEntry.data == "string") {
 		vaultEntry.data = (
-			vaultEntry.data.length > 0 ? unlockData(vaultEntry.data,vaultLockKey) : {}
+			vaultEntry.data.length > 0 ?
+				unlockData(vaultEntry.data,vaultLockKey) :
+				{}
 		);
 	}
 }

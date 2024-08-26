@@ -1,4 +1,4 @@
-import * as IDBStore from "@lo-fi/client-storage/idb";
+import IDBStore from "@lo-fi/client-storage/idb";
 import baseAdapter from "./base-adapter.js";
 import { defineAdapter } from "./lv.js";
 

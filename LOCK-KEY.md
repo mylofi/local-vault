@@ -6,7 +6,7 @@
 
 For best security, let **Local Vault** handle these details!
 
-Moreover, in managing lock-key access during a page instance, **Local Vault** (via **Local Data Lock**) uses an internal cache of lock-keys retrieved via passkey authentication (with [30 minutes default timeout](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#change-passkey-cache-lifetime)). This means that users shouldn't be prompted for passkey authentication more than once per 30 minutes (while in the same page instance). This timeout can be modified via `setMaxLockKeyCacheLifetime()` (from **Local Data Lock**).
+Moreover, in managing lock-key access during a page instance, **Local Vault** (via **Local Data Lock**) uses an internal cache of lock-keys retrieved via passkey authentication (with [30 minutes default timeout](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#change-lock-key-cache-lifetime)). This means that users shouldn't be prompted for passkey authentication more than once per 30 minutes (while in the same page instance). This timeout can be modified via `configure({ cacheLifetime: .. })` (from **Local Data Lock**).
 
 It's strongly recommended to [allow **Local Vault** to manage the balance between security and UX convenience](https://github.com/mylofi/local-data-lock#security-vs-convenience) with this timeout-limited caching of lock-key access.
 
