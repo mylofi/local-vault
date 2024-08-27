@@ -870,6 +870,7 @@ async function runRawStorageTests() {
 		testResults.push([ store.storageType, "entries", sortKeys(filterLocalMetadata(await store.entries())), ]);
 		testResults.push([ store.storageType, "remove", await store.remove("hello"), ]);
 		testResults.push([ store.storageType, "keys(2)", sortKeys(filterLocalMetadata(await store.keys())), ]);
+		await store.remove("meaning");
 	}
 	var testsPassed = true;
 	for (let [ testIdx, testResult ] of testResults.entries()) {
