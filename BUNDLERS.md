@@ -10,25 +10,33 @@ The plugins for Astro, Vite, and Webpack are included in the `bundler-plugins/` 
 
 **Note:** You should not need to manually copy any files, as the plugins access the dependencies (in `node_modules`) directly, to pull the files needed. But for reference, the files these plugins access are:
 
-* `node_modules/@lo-fi/local-vault/dist/bundlers/lv.mjs`
+* `@lo-fi/local-vault/dist/bundlers/lv.mjs`
 
     ESM library module that's suitable for bundling and `import`ing into your web app.
 
-    **Note:** this is *not* the same as `node_modules/@lo-fi/local-vault/dist/auto/lv.js`, which is only intended [for web application projects WITHOUT a bundler](NON-BUNDLERS.md)
+    **Note:** this is *not* the same as `@lo-fi/local-vault/dist/auto/lv.js`, which is only intended [for web application projects WITHOUT a bundler](NON-BUNDLERS.md)
 
-* `node_modules/@lo-fi/local-vault/dist/bundlers/base-adapter.mjs`
+* `@lo-fi/local-vault/dist/bundlers/base-adapter.mjs`
 
 * storage adapters (despite naming similarities, these two sets of files are different):
 
-    * `node_modules/@lo-fi/local-vault/dist/bundlers/adapter.*.mjs`
+    * `@lo-fi/local-vault/dist/bundlers/adapter.*.mjs`
 
-    * `node_modules/@lo-fi/client-storage/dist/adapter.*.mjs`
+    * `@lo-fi/client-storage/dist/adapter.*.mjs`
 
-* `node_modules/@lo-fi/local-data-lock/dist/bundlers/ldl.mjs`
+* `@lo-fi/client-storage/dist/util.mjs`
 
-* `node_modules/@lo-fi/webauthn-local-client/dist/bundlers/walc.mjs`
+* `@lo-fi/client-storage/dist/worker.opfs.mjs`
 
-* `node_modules/@lo-fi/webauthn-local-client/dist/bundlers/walc-external-bundle.js`
+    ESM module loaded into a web worker, when using the `opfs-worker` adapter
+
+* `@lo-fi/client-storage/dist/external/idb-keyval.js`
+
+* `@lo-fi/local-data-lock/dist/bundlers/ldl.mjs`
+
+* `@lo-fi/webauthn-local-client/dist/bundlers/walc.mjs`
+
+* `@lo-fi/webauthn-local-client/dist/bundlers/walc-external-bundle.js`
 
     Non-ESM (plain global .js) bundle of dependencies that must be loaded separately from (and prior to) your app's bundle.
 
@@ -102,7 +110,7 @@ export default defineConfig({
 });
 ```
 
-This plugin works for the `vite dev` (dev-server), `vite preview` (also dev-server), and `vite build` modes. In all cases, it copies the `node_modules/@lo-fi/webauthn-local-client/dist/bundlers/walc-external-bundle.js` file into the `public/` directory of your project root. It also injects a `<script src="/walc-external-bundle.js"></script>` tag into the markup of the `index.html` file that Vite produces for your app.
+This plugin works for the `vite dev` (dev-server), `vite preview` (also dev-server), and `vite build` modes. In all cases, it copies the `@lo-fi/webauthn-local-client/dist/bundlers/walc-external-bundle.js` file into the `public/` directory of your project root. It also injects a `<script src="/walc-external-bundle.js"></script>` tag into the markup of the `index.html` file that Vite produces for your app.
 
 **Note:** At present, this plugin is not configurable in any way (i.e., calling `LV()` above with no arguments). If something about its behavior is not compatible with your Vite project setup -- which can vary widely and be quite complex to predict or support by a basic plugin -- it's recommended you simply copy over the `local-vault/bundler-plugins/vite.mjs` plugin and make necessary changes.
 
@@ -161,7 +169,7 @@ export default {
 };
 ```
 
-This plugin copies the `node_modules/@lo-fi/webauthn-local-client/dist/bundlers/walc-external-bundle.js` file into the build root (default `dist/`), along with the other bundled files. It also injects a `<script src="walc-external-bundle.js"></script>` tag into the markup of the `index.html` file (and any other HTML files) that Webpack produces for your app.
+This plugin copies the `@lo-fi/webauthn-local-client/dist/bundlers/walc-external-bundle.js` file into the build root (default `dist/`), along with the other bundled files. It also injects a `<script src="walc-external-bundle.js"></script>` tag into the markup of the `index.html` file (and any other HTML files) that Webpack produces for your app.
 
 **Note:** At present, this plugin is not configurable in any way (i.e., calling `LV()` above with no arguments). If something about its behavior is not compatible with your Webpack project setup -- which can vary widely and be quite complex to predict or support by a basic plugin -- it's recommended you simply copy over the `local-vault/bundler-plugins/webpack.mjs` plugin and make necessary changes.
 

@@ -1,25 +1,27 @@
 {
 	"name": "@lo-fi/local-vault",
 	"description": "Store key-value data encrypted (biometric passkey protected), locally in the client",
-	"version": "0.14.0",
+	"version": "0.15.0",
 	"exports": {
 		".": "./dist/bundlers/lv.mjs",
+		"./adapter/idb": "./dist/bundlers/adapter.idb.mjs",
 		"./adapter/local-storage": "./dist/bundlers/adapter.local-storage.mjs",
 		"./adapter/session-storage": "./dist/bundlers/adapter.session-storage.mjs",
-		"./adapter/idb": "./dist/bundlers/adapter.idb.mjs",
-		"./adapter/opfs": "./dist/bundlers/adapter.opfs.mjs",
 		"./adapter/cookie": "./dist/bundlers/adapter.cookie.mjs",
+		"./adapter/opfs": "./dist/bundlers/adapter.opfs.mjs",
+		"./adapter/opfs-worker": "./dist/bundlers/adapter.opfs-worker.mjs",
 		"./bundlers/astro": "./bundler-plugins/astro.mjs",
 		"./bundlers/vite": "./bundler-plugins/vite.mjs",
 		"./bundlers/webpack": "./bundler-plugins/webpack.mjs"
 	},
 	"browser": {
 		"@lo-fi/local-vault": "./dist/bundlers/lv.mjs",
+		"@lo-fi/local-vault/adapter/idb": "./dist/bundlers/adapter.idb.mjs",
 		"@lo-fi/local-vault/adapter/local-storage": "./dist/bundlers/adapter.local-storage.mjs",
 		"@lo-fi/local-vault/adapter/session-storage": "./dist/bundlers/adapter.session-storage.mjs",
-		"@lo-fi/local-vault/adapter/idb": "./dist/bundlers/adapter.idb.mjs",
+		"@lo-fi/local-vault/adapter/cookie": "./dist/bundlers/adapter.cookie.mjs",
 		"@lo-fi/local-vault/adapter/opfs": "./dist/bundlers/adapter.opfs.mjs",
-		"@lo-fi/local-vault/adapter/cookie": "./dist/bundlers/adapter.cookie.mjs"
+		"@lo-fi/local-vault/adapter/opfs-worker": "./dist/bundlers/adapter.opfs-worker.mjs"
 	},
 	"scripts": {
 		"build:all": "node scripts/build-all.js",
@@ -31,7 +33,7 @@
 		"prepublishOnly": "npm run build:all"
 	},
 	"dependencies": {
-		"@lo-fi/client-storage": "~0.9.0",
+		"@lo-fi/client-storage": "~0.10.0",
 		"@lo-fi/local-data-lock": "~0.12.0"
 	},
 	"devDependencies": {

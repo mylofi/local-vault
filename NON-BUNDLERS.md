@@ -2,17 +2,20 @@
 
 To use this library directly -- i.e., in a classic/vanilla web project without a modern bundler tool -- make a directory for it (e.g., `local-vault/`) in your browser app's JS assets directory.
 
-Then copy over all `dist/auto/*` contents, as-is:
+Then copy over all `@lo-fi/local-vault/dist/auto/*` contents, as-is:
 
-* `dist/auto/lv.js`
+* `@lo-fi/local-vault/dist/auto/lv.js`
 
     **Note:** this is *not* the same as `dist/bundlers/lv.mjs`, which is only intended [for web application projects WITH a bundler](BUNDLERS.md)
 
-* `dist/auto/adapter.*.js`
+* `@lo-fi/local-vault/dist/auto/adapter.*.js`
+
+* `@lo-fi/local-vault/dist/auto/base-adapter.js`
 
 * `dist/auto/external/*` (preserve the whole `external/` sub-directory):
-    - `@lo-fi/client-storage/base-adapter.mjs`
     - `@lo-fi/client-storage/adapter.*.mjs`
+    - `@lo-fi/client-storage/util.mjs`
+    - `@lo-fi/client-storage/worker.opfs.mjs`
     - `@lo-fi/client-storage/external/idb-keyval.js`
     - `@lo-fi/local-data-lock/ldl.js`,
     - `@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js`
@@ -42,25 +45,24 @@ If your **non-bundled** browser app has an [Import Map](https://developer.mozill
 {
     "imports": {
         "local-vault": "/path/to/js-assets/local-vault/lv.js",
-
-        "local-vault/base-adapter": "/path/to/js-assets/local-vault/base-adapter.js",
         "local-vault/adapter/idb": "/path/to/js-assets/local-vault/adapter.idb.js",
         "local-vault/adapter/local-storage": "/path/to/js-assets/local-vault/adapter.local-storage.js",
         "local-vault/adapter/session-storage": "/path/to/js-assets/local-vault/adapter.session-storage.js",
         "local-vault/adapter/cookie": "/path/to/js-assets/local-vault/adapter.cookie.js",
         "local-vault/adapter/opfs": "/path/to/js-assets/local-vault/adapter.opfs.js",
-
-        "@lo-fi/local-data-lock": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/ldl.js",
+        "local-vault/adapter/opfs-worker": "/path/to/js-assets/local-vault/adapter.opfs-worker.js",
 
         "@lo-fi/client-storage/idb": "/path/to/js-assets/local-vault/external/@lo-fi/client-storage/adapter.idb.mjs",
         "@lo-fi/client-storage/local-storage": "/path/to/js-assets/local-vault/external/@lo-fi/client-storage/adapter.local-storage.mjs",
         "@lo-fi/client-storage/session-storage": "/path/to/js-assets/local-vault/external/@lo-fi/client-storage/adapter.session-storage.mjs",
         "@lo-fi/client-storage/cookie": "/path/to/js-assets/local-vault/external/@lo-fi/client-storage/adapter.cookie.mjs",
         "@lo-fi/client-storage/opfs": "/path/to/js-assets/local-vault/external/@lo-fi/client-storage/adapter.opfs.mjs",
+        "@lo-fi/client-storage/opfs-worker": "/path/to/js-assets/local-vault/external/@lo-fi/client-storage/adapter.opfs-worker.mjs",
+
+        "@lo-fi/local-data-lock": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/ldl.js",
+        "@lo-fi/webauthn-local-client": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js"
 
         "idb-keyval": "/path/to/js-assets/local-vault/external/@lo-fi/client-storage/external/idb-keyval.js",
-
-        "@lo-fi/webauthn-local-client": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js"
     }
 }
 </script>

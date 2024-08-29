@@ -1,11 +1,12 @@
 // note: these module specifiers come from the import-map
 //    in index.html; swap "src" for "dist" here to test
 //    against the dist/* files
-import "local-vault/src/adapter-idb";
-import "local-vault/src/adapter-local-storage";
-import "local-vault/src/adapter-session-storage";
-import "local-vault/src/adapter-opfs";
-import "local-vault/src/adapter-cookie";
+import "local-vault/src/adapter/idb";
+import "local-vault/src/adapter/local-storage";
+import "local-vault/src/adapter/session-storage";
+import "local-vault/src/adapter/cookie";
+import "local-vault/src/adapter/opfs";
+import "local-vault/src/adapter/opfs-worker";
 import {
 	rawStorage,
 	connect,
@@ -28,6 +29,7 @@ const storageTypes = {
 	"session-storage": "Session Storage",
 	"cookie": "Cookies",
 	"opfs": "Origin Private FS (Chrome/Firefox)",
+	"opfs-worker": "OPFS-Worker",
 };
 
 var setupVaultBtn;
@@ -178,7 +180,7 @@ async function promptVaultOptions(
 				vaultIDEl.value = vaultID;
 			}
 
-			if (![ "local-storage", "session-storage", "idb", "cookie", "opfs", ].includes(storageType)) {
+			if (![ "local-storage", "session-storage", "idb", "cookie", "opfs", "opfs-worker", ].includes(storageType)) {
 				Swal.showValidationMessage("Select a vault storage type.");
 				return false;
 			}
@@ -847,6 +849,16 @@ async function runRawStorageTests() {
 		[ "opfs", "entries", [ [ "hello", "world", ], [ "meaning", { ofLife: 42, }, ], ], ],
 		[ "opfs", "remove", true ],
 		[ "opfs", "keys(2)", [ "meaning", ], ],
+		[ "opfs-worker", "has(1)", false ],
+		[ "opfs-worker", "get(1)", null ],
+		[ "opfs-worker", "set(1)", true ],
+		[ "opfs-worker", "has(2)", true ],
+		[ "opfs-worker", "get(2)", "world" ],
+		[ "opfs-worker", "set(2)", true ],
+		[ "opfs-worker", "keys(1)", [ "hello", "meaning", ], ],
+		[ "opfs-worker", "entries", [ [ "hello", "world", ], [ "meaning", { ofLife: 42, }, ], ], ],
+		[ "opfs-worker", "remove", true ],
+		[ "opfs-worker", "keys(2)", [ "meaning", ], ],
 	];
 	var testResults = [];
 
@@ -857,8 +869,9 @@ async function runRawStorageTests() {
 	var SSStore = rawStorage("session-storage");
 	var CookieStore = rawStorage("cookie");
 	var OPFSStore = rawStorage("opfs");
+	var OPFSWorkerStore = rawStorage("opfs-worker");
 
-	var stores = [ IDBStore, LSStore, SSStore, CookieStore, OPFSStore ];
+	var stores = [ IDBStore, LSStore, SSStore, CookieStore, OPFSStore, OPFSWorkerStore, ];
 	for (let store of stores) {
 		testResults.push([ store.storageType, "has(1)", await store.has("hello"), ]);
 		testResults.push([ store.storageType, "get(1)", await store.get("hello"), ]);
