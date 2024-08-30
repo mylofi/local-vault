@@ -77,9 +77,9 @@ export default defineConfig({
 });
 ```
 
-This plugin works for the `astro dev` (dev-server), as well as `astro build` / `astro preview` modes. In all cases, it copies the WebAuthn-Local-Client (`@lo-fi/webauthn-local-client`) dependency bundle file (`/dist/bundlers/walc-external-bundle.js`) into the `public/` directory of your project root, as well as the `dist/` directory when running a build. It also injects an inline `<script>` element into the `<head>` of all generated pages, which dynamically loads the `/walc-external-bundle.js` script file (which has all the dependencies WALC needs).
+This plugin works for the `astro dev` (dev-server), as well as `astro build` / `astro preview` modes. In all cases, it copies the `@lo-fi/local-vault/dist/bundlers/walc-external-bundle.js` file into the `public/` directory of your project root, as well as the `dist/` directory when running a build. It also injects an inline `<script>` element into the `<head>` of all generated pages, which dynamically loads the `/walc-external-bundle.js` script file (which has all the dependencies WALC needs).
 
-**Note:** At present, this plugin is not configurable in any way (i.e., calling `LV()` above with no arguments). If something about its behavior is not compatible with your Astro project setup -- which can vary widely and be quite complex to predict or support by a basic plugin -- it's recommended you simply copy over the `local-vault/bundler-plugins/astro.mjs` plugin and make necessary changes.
+**Note:** At present, this plugin is not configurable in any way (i.e., calling `LV()` above with no arguments). If something about its behavior is not compatible with your Astro project setup -- which can vary widely and be quite complex to predict or support by a basic plugin -- it's recommended you simply copy over the `@lo-fi/local-vault/bundler-plugins/astro.mjs` plugin and make necessary changes.
 
 ### Vite Plugin
 
@@ -112,7 +112,7 @@ export default defineConfig({
 
 This plugin works for the `vite dev` (dev-server), `vite preview` (also dev-server), and `vite build` modes. In all cases, it copies the `@lo-fi/webauthn-local-client/dist/bundlers/walc-external-bundle.js` file into the `public/` directory of your project root. It also injects a `<script src="/walc-external-bundle.js"></script>` tag into the markup of the `index.html` file that Vite produces for your app.
 
-**Note:** At present, this plugin is not configurable in any way (i.e., calling `LV()` above with no arguments). If something about its behavior is not compatible with your Vite project setup -- which can vary widely and be quite complex to predict or support by a basic plugin -- it's recommended you simply copy over the `local-vault/bundler-plugins/vite.mjs` plugin and make necessary changes.
+**Note:** At present, this plugin is not configurable in any way (i.e., calling `LV()` above with no arguments). If something about its behavior is not compatible with your Vite project setup -- which can vary widely and be quite complex to predict or support by a basic plugin -- it's recommended you simply copy over the `@lo-fi/local-vault/bundler-plugins/vite.mjs` plugin and make necessary changes.
 
 #### Top-level `await`
 
@@ -171,7 +171,7 @@ export default {
 
 This plugin copies the `@lo-fi/webauthn-local-client/dist/bundlers/walc-external-bundle.js` file into the build root (default `dist/`), along with the other bundled files. It also injects a `<script src="walc-external-bundle.js"></script>` tag into the markup of the `index.html` file (and any other HTML files) that Webpack produces for your app.
 
-**Note:** At present, this plugin is not configurable in any way (i.e., calling `LV()` above with no arguments). If something about its behavior is not compatible with your Webpack project setup -- which can vary widely and be quite complex to predict or support by a basic plugin -- it's recommended you simply copy over the `local-vault/bundler-plugins/webpack.mjs` plugin and make necessary changes.
+**Note:** At present, this plugin is not configurable in any way (i.e., calling `LV()` above with no arguments). If something about its behavior is not compatible with your Webpack project setup -- which can vary widely and be quite complex to predict or support by a basic plugin -- it's recommended you simply copy over the `@lo-fi/local-vault/bundler-plugins/webpack.mjs` plugin and make necessary changes.
 
 ## Import/Usage
 
@@ -184,4 +184,4 @@ import from "@lo-fi/local-vault/adapter/{WHICHEVER}";
 import { connect } from "@lo-fi/local-vault";
 ```
 
-When `import`ed like this, Astro, Vite, Webpack should (via these plugins) properly find and bundle the `dist/bundlers/lv.mjs` ESM library module with the rest of your app code, hopefully without any further steps necessary.
+When `import`ed like this, Astro, Vite, Webpack should (via these plugins) properly find and bundle the `@lo-fi/local-vault/dist/bundlers/lv.mjs` ESM library module with the rest of your app code, hopefully without any further steps necessary.

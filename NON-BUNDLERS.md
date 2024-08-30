@@ -12,7 +12,7 @@ Then copy over all `@lo-fi/local-vault/dist/auto/*` contents, as-is:
 
 * `@lo-fi/local-vault/dist/auto/base-adapter.js`
 
-* `dist/auto/external/*` (preserve the whole `external/` sub-directory):
+* `@lo-fi/local-vault/dist/auto/external/*` (preserve the whole `external/` sub-directory):
     - `@lo-fi/client-storage/adapter.*.mjs`
     - `@lo-fi/client-storage/util.mjs`
     - `@lo-fi/client-storage/worker.opfs.mjs`
@@ -79,7 +79,7 @@ import { connect } from "local-vault";
 
 **Note:** If you omit the above `"local-vault"` import-map entry (first line), you can still `import` **Local Vault** by specifying the proper path to `lv.js` (as shown in the import-map above). Same for the `"local-vault/base-adapter` and `"local-vault/adapter/*"` entries. However, the entries above for `idb-keyval`, `@lo-fi/client-storage`, `"@lo-fi/local-data-lock"`, and `"@lo-fi/webauthn-local-client"` are ***more required (and strongly recommended)***.
 
-### WARNING: without an import-map, manual edits are required
+### WARNING: without an import-map, manual edits are required!
 
 If you don't include an import-map with at least the "required" entries as noted above, you'll have to make the following manual edits (strongly discouraged):
 
