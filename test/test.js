@@ -8,6 +8,7 @@ import "local-vault/src/adapter/cookie";
 import "local-vault/src/adapter/opfs";
 import "local-vault/src/adapter/opfs-worker";
 import {
+	supportsWebAuthn,
 	rawStorage,
 	connect,
 	removeAll,
@@ -93,6 +94,8 @@ async function promptVaultOptions(
 	askForVaultID = false,
 	newVaultRegistration = false
 ) {
+	if (!checkWebAuthnSupport()) return;
+
 	var storageTypeEl;
 	var vaultIDEl;
 	var registerIDEl;
@@ -172,7 +175,7 @@ async function promptVaultOptions(
 			storageTypeEl = vaultIDEl = generateIDBtn = copyBtn = null;
 		},
 
-		async preConfirm() {
+		preConfirm() {
 			var storageType = storageTypeEl.value;
 			var vaultID = (askForVaultID ? (vaultIDEl.value || null) : null);
 			if (vaultID != null) {
@@ -231,6 +234,8 @@ async function promptVaultOptions(
 }
 
 async function promptAddPasskey() {
+	if (!checkWebAuthnSupport()) return;
+
 	var passkeyUsernameEl;
 	var passkeyDisplayNameEl;
 
@@ -271,7 +276,7 @@ async function promptAddPasskey() {
 			passkeyUsernameEl = passkeyDisplayNameEl = null;
 		},
 
-		async preConfirm() {
+		preConfirm() {
 			var passkeyUsername = passkeyUsernameEl.value.trim();
 			var passkeyDisplayName = passkeyDisplayNameEl.value.trim();
 
@@ -424,6 +429,8 @@ async function removeAllVaults() {
 }
 
 async function openVault() {
+	if (!checkWebAuthnSupport()) return;
+
 	var { storageType, vaultID, } = (
 		currentVault != null ?
 			{
@@ -465,6 +472,8 @@ async function openVault() {
 }
 
 async function lockVault() {
+	if (!checkWebAuthnSupport()) return;
+
 	if (currentVault) {
 		try {
 			currentVault.lock();
@@ -480,6 +489,8 @@ async function lockVault() {
 }
 
 async function addPasskeyToVault() {
+	if (!checkWebAuthnSupport()) return;
+
 	if (currentVault) {
 		let {
 			passkeyUsername: username,
@@ -509,6 +520,8 @@ async function addPasskeyToVault() {
 }
 
 async function resetVault() {
+	if (!checkWebAuthnSupport()) return;
+
 	if (currentVault != null) {
 		let confirmResult = await Swal.fire({
 			text: "Resetting a vault's lock-key regenerates a new encryption/decryption key and a new passkey, while discarding previously associated passkeys. Are you sure?",
@@ -935,4 +948,11 @@ function sortKeys(vals) {
 		}
 	}
 	return vals;
+}
+
+async function checkWebAuthnSupport() {
+	if (!supportsWebAuthn) {
+		showError("Sorry, but this device doesn't seem to support the proper passkey functionality.");
+		return false;
+	}
 }
