@@ -10,7 +10,19 @@ Moreover, in managing lock-key access during a page instance, **Local Vault** (v
 
 It's strongly recommended to [allow **Local Vault** to manage the balance between security and UX convenience](https://github.com/mylofi/local-data-lock#security-vs-convenience) with this timeout-limited caching of lock-key access.
 
+----
+
 All those warnings/suggestions aside, there are some legitimate reasons to manually access or set a vault's lock-key. This guide will explain how to do so, responsibly and safely.
+
+Here are some relevant use-cases:
+
+* [Manually setting lock-key on a new vault](#manually-setting-lock-key-on-a-new-vault)
+
+* [Manually setting lock-key when connecting to existing vault](#manually-setting-lock-key-when-connecting-to-existing-vault)
+
+* [Manually setting lock-key for vault instance operations](#manually-setting-lock-key-for-vault-instance-operations)
+
+* [Using the lock-key for digital signatures/verifications](#using-the-lock-key-for-digital-signaturesverifications)
 
 ## Manually deriving a lock-key
 
@@ -104,7 +116,7 @@ function unpackLockKey(packedLockedKey) {
 }
 ```
 
-With this helper method, you can unpack lock-key object (holding base64 encoded binary values) -- either [pulled from raw-storage](README.md#raw-storage-access), or received transmitted from another device:
+With this helper method, you can unpack the lock-key object (holding base64 encoded binary values) -- either [pulled from raw-storage](README.md#raw-storage-access), or received transmitted from another device:
 
 ```js
 import "@lo-fi/local-vault/adapter/idb";
@@ -184,7 +196,7 @@ await vault.get("hello",{ useLockKey: existingLockKey });
 // "world!"
 ```
 
-The vault instance methods which *do not* support the `useLockKey` override (passing such will throw an exception):
+The vault instance methods that *DO NOT* support the `useLockKey` override (passing such will throw an exception):
 
 * `lock()`
 
@@ -194,21 +206,23 @@ The vault instance methods which *do not* support the `useLockKey` override (pas
 
 ## Using the lock-key for digital signatures/verifications
 
-As it relates to the cryptography these libraries are performing, a digital signature (that can be verified elsewhere) acts as an asymmetric -- meaning you're using an asymmetric keypair, made up of a public-key and private-key -- proof of *who* sent a message. The sender uses the private-key to generate a signature, and the receiver (who typically only has the public-key) can ***verify that signature***, to prove to the receiver that the message came from the sender, and wasn't tampered with by a MitM.
+As it relates to the cryptography of these libraries, a digital signature (that can be verified elsewhere) acts as an asymmetric (keypair made up of a public-key and private-key) proof of *who* sent a message. The sender uses the private-key to generate a signature, and the receiver (who typically only has the public-key) can ***verify that signature***, to prove to the receiver that the message came from the expected sender (no forgery), and wasn't tampered with by a middle-man.
 
 [**Local Data Lock**](https://github.com/mylofi/local-data-lock) provides two API methods, [`signData()` and `verifySignature()`](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#signing-data-and-verifying-signatures), for this purpose. Both methods accept a lock-key, and use it for generating or verifying (detached) digital signatures over arbitrary data.
 
-**Note:** Technically, these methods only use the `privateKey` (for `signData()`) or `publicKey` (for `verifySignature()`) properties from a full lock-key object, so those specific properties are all that's necessary. Encryption/decryption uses the `enc`
+**Note:** Technically, these methods only use the `privateKey` (for `signData()`) or `publicKey` (for `verifySignature()`) properties from a full lock-key object, so those respective properties are all that's necessary on the object value passed in. The other properties on a lock-key (`encPK`, `encSK`) are only used for encryption/decryption.
 
-It's important to point out: digital signatures are *not encryption*. The data itself may be plain-text or encrypted. The digital signature is not really protecting the data from snooping by others -- that's what encryption does! -- but rather just protecting from having a message unexpectedly modified while in transit between sender and receiver, in a way you the receiver detect.
+Digital signatures are *not for encryption*; the data being signed may be plain-text or encrypted. A digital signature does not protect data from snooping by others -- that's what encryption does! Rather, signatures ensure data and sender are authentic as claimed.
 
 ### Example Scenario
 
-As an example of how you might use this capability in a local-first application, you might have one keypair on one device, and another keypair on another device (user device, or server). These two devices would exchange their respective public-keys -- using a trustable channel), so device A knows its own full keypair as well as device B's public-key; likewise device B would know its own full keypair and device A's public-key.
+As an example of how you might use this capability in a local-first application, you might want to send messages between two devices (e.g., synchronizing data). In this case, it's important for the receiving device to ensure it only accepts messages from the expected peer.
 
-Now, these devices can send messages between each other, using any public or private channels, and be able to prove the authenticity of these messages as coming from their respective sender.
+To do this, you generate a keypair (lock-key) on one device, and another keypair on the other device (user device, or server). These two devices first exchange their respective public-keys using a trustable channel; device A knows its own full keypair plus device B's public-key, and device B knows its own full keypair plus device A's public-key.
 
-When device A wants to send a piece of data (again, plain data or encrypted) to device B, it first generates a signature using A's own private key. It then sends the data *and the signature* to B. When B receives the data and the signature, it verifies the signature matches the data *and* that it in fact came from device A, using device A's public-key:
+These devices can send messages between each other, using whatever communication channel is appropriate, and receiver can always prove the authenticity of incoming messages as coming from the expected sender.
+
+When device A wants to send a piece of data (again, plain data or encrypted) to device B, it first generates a signature using A's own private key. It then sends the data *and the signature* to B. When B receives the data and the signature, it verifies that the signature matches both the data *and* device A's public-key:
 
 ```js
 // on device A
@@ -230,4 +244,6 @@ var verified = verifySignature(data,signature,{
 });
 ```
 
-Of course, the same process can work in the other direction: device B (signing with B's private-key) sending to device A (verifying with B's public-key).
+If either the data or public-key don't match the signature, verification fails.
+
+Of course, the same process also works in the other direction: device B (signing with B's private-key) sending to device A (verifying with B's public-key).

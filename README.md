@@ -29,6 +29,10 @@ The cryptographic encryption/decryption key is furthermore [protected locally in
 
 **Local Vault** directly depends on [**Client Storage**](https://github.com/mylofi/client-storage), as well as [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**WebAuthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
 
+----
+
+**Tip:** For additional information about manually handling vault lock-keys, including computing digital signatures for data transmission, [check out the Lock-Key guide](LOCK-KEY.md).
+
 ## Client Side Storage Adapters
 
 **Local Vault** ships with adapters ([backed by the corresponding **Client Storage** adapters](https://github.com/mylofi/client-storage?tab=readme-ov-file#client-side-storage-adapters)) for these browser storage mechanisms:
