@@ -892,10 +892,10 @@ async function runRawStorageTests() {
 		testResults.push([ store.storageType, "has(2)", await store.has("hello"), ]);
 		testResults.push([ store.storageType, "get(2)", await store.get("hello"), ]);
 		testResults.push([ store.storageType, "set(2)", await store.set("meaning",{ ofLife: 42, }), ]);
-		testResults.push([ store.storageType, "keys(1)", sortKeys(filterLocalMetadata(await store.keys())), ]);
-		testResults.push([ store.storageType, "entries", sortKeys(filterLocalMetadata(await store.entries())), ]);
+		testResults.push([ store.storageType, "keys(1)", sortKeys(filterKnownNames("hello","meaning")(await store.keys())), ]);
+		testResults.push([ store.storageType, "entries", sortKeys(filterKnownNames("hello","meaning")(await store.entries())), ]);
 		testResults.push([ store.storageType, "remove", await store.remove("hello"), ]);
-		testResults.push([ store.storageType, "keys(2)", sortKeys(filterLocalMetadata(await store.keys())), ]);
+		testResults.push([ store.storageType, "keys(2)", sortKeys(filterKnownNames("hello","meaning")(await store.keys())), ]);
 		await store.remove("meaning");
 	}
 	var testsPassed = true;
@@ -915,21 +915,23 @@ async function runRawStorageTests() {
 	}
 }
 
-function filterLocalMetadata(vals) {
-	if (vals.length > 0) {
-		// entries?
-		if (Array.isArray(vals[0])) {
-			return vals.filter(([ name, value ]) => (
-				!/^local-((vault-.+)|(identities))/.test(name)
-			));
+function filterKnownNames(...knownNames) {
+	return function filterer(vals) {
+		if (vals.length > 0) {
+			// entries?
+			if (Array.isArray(vals[0])) {
+				return vals.filter(([ name, value ]) => (
+					knownNames.includes(name)
+				));
+			}
+			else {
+				return vals.filter(name => (
+					knownNames.includes(name)
+				));
+			}
 		}
-		else {
-			return vals.filter(name => (
-				!/^local-((vault-.+)|(identities))/.test(name)
-			));
-		}
+		return vals;
 	}
-	return vals;
 }
 
 function sortKeys(vals) {

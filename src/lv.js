@@ -74,7 +74,7 @@ function defineAdapter({
 }
 
 function rawStorage(storageType) {
-	if (storageType in adapters && adapters[storageType].raw != null) {
+	if (adapters[storageType]?.raw != null) {
 		return adapters[storageType].raw;
 	}
 	else {
@@ -195,9 +195,7 @@ async function connect({
 					// pull lock-key from passkey
 					await getLockKey({
 						...keyOptions,
-						relyingPartyID: (
-							vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
-						),
+						relyingPartyID: vaultEntry.rpID ?? relyingPartyID,
 						relyingPartyName,
 						...(
 							addNewVault ?
@@ -265,9 +263,7 @@ async function has(name,{ useLockKey, signal, } = {}) {
 async function get(name,{ useLockKey, signal, } = {}) {
 	var { vaultEntry, } = await openVault(this,useLockKey,signal);
 
-	if (vaultEntry != null) {
-		return vaultEntry.data[name];
-	}
+	return vaultEntry?.data?.[name];
 }
 
 async function set(name,val,{ useLockKey, signal, } = {}) {
@@ -377,16 +373,10 @@ async function addPasskey({
 			let vaultLockKey = await getLockKey({
 				...keyOptions,
 				localIdentity: vaultEntry.accountID,
-				relyingPartyID: (
-					vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
-				),
+				relyingPartyID: vaultEntry.rpID ?? relyingPartyID,
 				relyingPartyName,
 				addNewPasskey: true,
-				signal: (
-					cancelAddPasskey != null ? cancelAddPasskey :
-					vaultEntry.externalSignal != null ? vaultEntry.externalSignal :
-					null
-				),
+				signal: cancelAddPasskey ?? vaultEntry.externalSignal ?? null,
 			});
 			return (vaultLockKey != null);
 		}
@@ -418,17 +408,11 @@ async function resetLockKey({
 			let vaultLockKey = await getLockKey({
 				...keyOptions,
 				localIdentity: vaultEntry.accountID,
-				relyingPartyID: (
-					vaultEntry.rpID != null ? vaultEntry.rpID : relyingPartyID
-				),
+				relyingPartyID: vaultEntry.rpID ?? relyingPartyID,
 				relyingPartyName,
 				resetLockKey: true,
 				useLockKey,
-				signal: (
-					cancelResetPasskey != null ? cancelResetPasskey :
-					vaultEntry.externalSignal != null ? vaultEntry.externalSignal :
-					null
-				),
+				signal: cancelResetPasskey ?? vaultEntry.externalSignal ?? null,
 			});
 
 			if (vaultLockKey != null) {
@@ -492,12 +476,9 @@ async function openVault(vault,useLockKey,signal) {
 			let vaultEntry = await getVaultEntry(storageType,vaultID);
 
 			let vaultLockKey = (
-				// lock-key provided manually?
-				useLockKey != null ?
-					// just use it, instead of trying to pull from the
-					// passkey
-					useLockKey :
-
+				// lock-key provided manually? just use it,
+				// instead of trying to pull from the passkey
+				useLockKey ?? (
 					// even if the local vault cache is still present
 					// and unlocked, re-retrieve the lock-key to ensure that
 					// if its caching has expired, the user is re-prompted
@@ -506,6 +487,7 @@ async function openVault(vault,useLockKey,signal) {
 						relyingPartyID: vaultEntry.rpID,
 						signal,
 					})
+				)
 			);
 
 			// lock-key retrieval successful?
