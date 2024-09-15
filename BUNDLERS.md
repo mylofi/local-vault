@@ -18,19 +18,19 @@ The plugins for Astro, Vite, and Webpack are included in the `bundler-plugins/` 
 
 * `@lo-fi/local-vault/dist/bundlers/base-adapter.mjs`
 
-* storage adapters (despite naming similarities, these two sets of files are different):
+* storage adapters (despite naming similarities, these two sets of files are different, but related):
 
     * `@lo-fi/local-vault/dist/bundlers/adapter.*.mjs`
 
-    * `@lo-fi/client-storage/dist/adapter.*.mjs`
+    * `@byojs/storage/dist/adapter.*.mjs`
 
-* `@lo-fi/client-storage/dist/util.mjs`
+* `@byojs/storage/dist/util.mjs`
 
-* `@lo-fi/client-storage/dist/worker.opfs.mjs`
+* `@byojs/storage/dist/worker.opfs.mjs`
 
     ESM module loaded into a web worker, when using the `opfs-worker` adapter
 
-* `@lo-fi/client-storage/dist/external/idb-keyval.js`
+* `@byojs/storage/dist/external/idb-keyval.js`
 
 * `@lo-fi/local-data-lock/dist/bundlers/ldl.mjs`
 

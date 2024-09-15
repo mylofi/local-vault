@@ -21,13 +21,13 @@ await vault.get("Hello");               // "World!"
 
 ## Overview
 
-A *local vault* instance is a simple key-value store (`get()`, `set()`, etc), backed by [your choice among various client-side storage mechanisms](#client-side-storage-adapters) (`localStorage` / `sessionStorage`, IndexedDB, cookies, and OPFS) -- powered by the [**Client Storage** library's adapters](https://github.com/mylofi/client-storage).
+A *local vault* instance is a simple key-value store (`get()`, `set()`, etc), backed by [your choice among various client-side storage mechanisms](#client-side-storage-adapters) (`localStorage` / `sessionStorage`, IndexedDB, cookies, and OPFS) -- powered by the [**Storage** library's adapters](https://github.com/byojs/storage).
 
 The main feature of this library is automatically handling encryption (on write) and decryption (on read) from a local vault's data -- so data is always encrypted at-rest -- all client-side with no servers.
 
 The cryptographic encryption/decryption key is furthermore [protected locally in the client in a biometric passkey (i.e., authenticator, secure enclave, etc)](https://github.com/mylofi/local-data-lock?tab=readme-ov-file#how-does-it-work). Users can safely access their protected data with a simple biometric passkey authentication -- no troublesome passwords, and no privacy-eroding remote servers!
 
-**Local Vault** directly depends on [**Client Storage**](https://github.com/mylofi/client-storage), as well as [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**WebAuthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
+**Local Vault** directly depends on [**Storage**](https://github.com/byojs/storage), as well as [**Local-Data-Lock**](https://github.com/mylofi/local-data-lock), which depends on [**WebAuthn-Local-Client**](https://github.com/mylofi/webauthn-local-client).
 
 ----
 
@@ -35,7 +35,7 @@ The cryptographic encryption/decryption key is furthermore [protected locally in
 
 ## Client Side Storage Adapters
 
-**Local Vault** ships with adapters ([backed by the corresponding **Client Storage** adapters](https://github.com/mylofi/client-storage?tab=readme-ov-file#client-side-storage-adapters)) for these browser storage mechanisms:
+**Local Vault** ships with adapters ([backed by the corresponding **Storage** adapters](https://github.com/byojs/storage?tab=readme-ov-file#client-side-storage-adapters)) for these browser storage mechanisms:
 
 * `idb`: [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
 
@@ -73,7 +73,7 @@ You can load any or all of the adapters. But you must have at least one adapter 
 
 However, some bits of data that you need *unencrypted* access to -- for example, when reconnecting/unlocking a vault -- would present a chicken-and-the-egg problem if you stored that data *in a locked vault*. For example, you might store the auto-generated vault-ID, or in a more advanced usage, you might [even store the vault's lock-key](LOCK-KEY.md). Clearly, *these bits of data* cannot be encrypted by their own vault.
 
-Instead of storing/retrieving such data within a vault-instance, you can access the raw underlying storage -- with a friendly, consistent key-value style API ([as provided by **Client Storage**](https://github.com/mylofi/client-storage?tab=readme-ov-file#client-storage-api)) -- accessed via the `rawStorage()` method:
+Instead of storing/retrieving such data within a vault-instance, you can access the raw underlying storage -- with a friendly, consistent key-value style API ([as provided by **Storage**](https://github.com/byojs/storage?tab=readme-ov-file#storage-api)) -- accessed via the `rawStorage()` method:
 
 ```js
 import "@lo-fi/local-vault/adapter/idb";
@@ -109,7 +109,7 @@ if (vaultID == null) {
 }
 ```
 
-The [raw-storage API available is documented here](https://github.com/mylofi/client-storage?tab=readme-ov-file#client-storage-api).
+The [raw-storage API available is documented here](https://github.com/byojs/storage?tab=readme-ov-file#storage-api).
 
 **Warning:** Do not access/modify any values in the raw-storage with a specific name prefix of `"local-vault-"`, as you will interfere with the underlying managed vault storage entries.
 
@@ -133,7 +133,7 @@ else {
 }
 ```
 
-For further information about client-side storage limitations, and guidance in choosing which mechanism to use, [read the documentation for **Client Storage**](https://github.com/mylofi/client-storage?tab=readme-ov-file#storage-limitations).
+For further information about client-side storage limitations, and guidance in choosing which mechanism to use, [read the documentation for **Storage**](https://github.com/byojs/storage?tab=readme-ov-file#storage-limitations).
 
 ## Deployment / Import
 

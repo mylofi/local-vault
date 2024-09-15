@@ -1,4 +1,4 @@
-import SSStore from "@lo-fi/client-storage/session-storage";
+import SSStore from "@byojs/storage/session-storage";
 import baseAdapter from "./base-adapter.js";
 import { defineAdapter } from "./lv.js";
 

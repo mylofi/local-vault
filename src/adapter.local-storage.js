@@ -1,4 +1,4 @@
-import LSStore from "@lo-fi/client-storage/local-storage";
+import LSStore from "@byojs/storage/local-storage";
 import baseAdapter from "./base-adapter.js";
 import { defineAdapter } from "./lv.js";
 

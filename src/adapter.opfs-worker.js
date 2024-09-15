@@ -1,4 +1,4 @@
-import OPFSWorkerStore from "@lo-fi/client-storage/opfs-worker";
+import OPFSWorkerStore from "@byojs/storage/opfs-worker";
 import baseAdapter from "./base-adapter.js";
 import { defineAdapter } from "./lv.js";
 

@@ -1,4 +1,4 @@
-import CookieStore from "@lo-fi/client-storage/cookie";
+import CookieStore from "@byojs/storage/cookie";
 import baseAdapter from "./base-adapter.js";
 import { defineAdapter } from "./lv.js";
 
