@@ -151,12 +151,14 @@ The [**@lo-fi/local-vault** npm package](https://npmjs.com/package/@lo-fi/local-
 
 ## `WebAuthn` Supported?
 
-To check if `WebAuthn` API and functionality is supported on the device, consult the `supportsWebAuthn` exported boolean:
+To check if `WebAuthn` API and functionality is supported on the device, consult the `supportsWebAuthn` exported boolean.
+
+Additionally, **Local Vault** (via **Local Data Lock** dependency) requires the authenticator to support ["user verification"](https://developer.mozilla.org/en-US/docs/Web/API/PublicKeyCredential/isUserVerifyingPlatformAuthenticatorAvailable_static). Thus, a separate exported boolean called `supportsWAUserVerification` should also be checked:
 
 ```js
-import { supportsWebAuthn } from "..";
+import { supportsWebAuthn, supportsWAUserVerification } from "..";
 
-if (supportsWebAuthn) {
+if (supportsWebAuthn && supportsWAUserVerification) {
     // welcome to the future, without passwords!
 }
 else {

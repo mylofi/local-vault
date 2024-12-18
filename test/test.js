@@ -9,6 +9,7 @@ import "local-vault/src/adapter/opfs";
 import "local-vault/src/adapter/opfs-worker";
 import {
 	supportsWebAuthn,
+	supportsWAUserVerification,
 	rawStorage,
 	connect,
 	removeAll,
@@ -953,8 +954,11 @@ function sortKeys(vals) {
 }
 
 async function checkWebAuthnSupport() {
-	if (!supportsWebAuthn) {
-		showError("Sorry, but this device doesn't seem to support the proper passkey functionality.");
+	if (!(
+		supportsWebAuthn &&
+		supportsWAUserVerification
+	)) {
+		showError("Sorry, but this device doesn't seem to support the proper passkey functionality (including user-verification).");
 		return false;
 	}
 }

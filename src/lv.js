@@ -1,5 +1,6 @@
 import {
 	supportsWebAuthn,
+	supportsWAUserVerification,
 	toBase64String,
 	fromBase64String,
 	getLockKey,
@@ -25,6 +26,7 @@ var vaultEntryCache = new WeakMap();
 export {
 	// re-export Local-Data-Lock members:
 	supportsWebAuthn,
+	supportsWAUserVerification,
 	listLocalIdentities,
 	removeLocalAccount,
 	toBase64String,
@@ -40,6 +42,7 @@ export {
 var publicAPI = {
 	// re-export Local-Data-Lock members:
 	supportsWebAuthn,
+	supportsWAUserVerification,
 	listLocalIdentities,
 	removeLocalAccount,
 	toBase64String,
