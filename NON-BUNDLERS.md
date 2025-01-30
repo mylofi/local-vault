@@ -60,7 +60,7 @@ If your **non-bundled** browser app has an [Import Map](https://developer.mozill
         "@byojs/storage/opfs-worker": "/path/to/js-assets/local-vault/external/@byojs/storage/adapter.opfs-worker.mjs",
 
         "@lo-fi/local-data-lock": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/ldl.js",
-        "@lo-fi/webauthn-local-client": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js"
+        "@lo-fi/webauthn-local-client": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js",
 
         "idb-keyval": "/path/to/js-assets/local-vault/external/@byojs/storage/external/idb-keyval.js",
     }
