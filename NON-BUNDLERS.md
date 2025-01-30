@@ -62,7 +62,7 @@ If your **non-bundled** browser app has an [Import Map](https://developer.mozill
         "@lo-fi/local-data-lock": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/ldl.js",
         "@lo-fi/webauthn-local-client": "/path/to/js-assets/local-vault/external/@lo-fi/local-data-lock/external/@lo-fi/webauthn-local-client/walc.js",
 
-        "idb-keyval": "/path/to/js-assets/local-vault/external/@byojs/storage/external/idb-keyval.js",
+        "idb-keyval": "/path/to/js-assets/local-vault/external/@byojs/storage/external/idb-keyval.js"
     }
 }
 </script>
