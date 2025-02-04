@@ -129,9 +129,9 @@ var lockKey = unpackLockKey(
 );
 ```
 
-### Simpler Approach: IV/seed
+### Alternate Approach: IV/seed
 
-Instead of preserving/restoring the entire lock-key object value, just its `iv` value (IV/seed used for the keypair) is enough to re-derive the full keypair; this is a `Uint8Array` value, so it should be converted to a base64 encoded string:
+Instead of preserving/restoring the entire lock-key object value, its `iv` value (IV/seed used for the keypair) **AND** `localIdentity` (aka, local-account-ID) value are enough to re-derive the full vault key; the `iv` is a `Uint8Array` value, so it should be converted to a base64 encoded string before storage/transmission:
 
 ```js
 import "@lo-fi/local-vault/adapter/idb";
@@ -139,14 +139,60 @@ import { rawStorage, connect, toBase64String } from "..";
 
 /* .. */
 
+var IDBStore = rawStorage("idb");
+await IDBStore.set("local-account-id",lockKey.localIdentity);
 await IDBStore.set("lock-key-iv",toBase64String(lockKey.iv));
 ```
 
-To restore the full keypair object value from a serialized `iv` (either stored or transmitted), you'll need to use `fromBase64String()` to turn it back into a `Uint8Array` value, then pass that to [`deriveKey()`, as explained previously here](#manually-dering-a-lock-key).
+If your vault's ID is auto-generated and not a fixed value, you'll also need to store it:
 
-## Manually setting lock-key on a new vault
+```js
+await IDBStore.set("vault-id",vault.id);
+```
 
-If you have an explicit lock-key value -- from a `connect()`, `__exportLockKey()`, or `deriveLockKey()` call (even on another device) -- and you want to instantiate a *new* local vault with that key:
+#### Reconstituting the lock-key via IV
+
+To restore the full keypair object value in this approach:
+
+1. Use `fromBase64String()` to turn the `iv` it back into its `Uint8Array` form
+
+2. Pass that value to [`deriveKey()`, as explained previously here](#manually-dering-a-lock-key)
+
+3. Restore the `localIdentity` property to that derived lock-key object.
+
+4. Finally, [reconnect silently to the vault](#manually-using-lock-key-to-connect-to-existing-vault).
+
+Here's a sketch of putting those steps together:
+
+```js
+import "@lo-fi/local-vault/adapter/idb";
+import { fromBase64String, connect, } from "..";
+import { deriveLockKey, } from "@lo-fi/local-data-lock";
+
+// step 2:
+var existingLockKey = deriveLockKey(
+    // step 1:
+    fromBase64String(
+        await IDBStore.get("lock-key-iv")
+    )
+);
+
+// step 3:
+existingLockKey.localIdentity = await IDBStore.get("local-account-id");
+
+// step 4:
+var vault = await connect({
+    storageType: "idb",
+    vaultID: await IDBStore.get("vault-id"),
+    keyOptions: {
+        useLockKey: existingLockKey
+    }
+});
+```
+
+## Manually setting lock-key on a NEW vault
+
+If you have an explicit lock-key value -- from an `__exportLockKey()` or `deriveLockKey()` call (even on another device) -- and you want to instantiate a *NEW* local vault with that key:
 
 ```js
 var existingLockKey = /* .. */;
@@ -160,9 +206,9 @@ var vault = await connect({
 });
 ```
 
-**Note:** Even though this lock-key is being manually specified at vault creation, the user will still be prompted for passkey authentication at this time, to be able to save the lock-key. There is *intentionally no way* to use **Local Vault** without a user being passkey-authentication prompted at least once (per device), at initial vault setup.
+**Note:** Even though this lock-key is being manually specified at vault creation, the user will still be prompted for passkey **CREATION** at this time, to be able to save the lock-key into that passkey. There is *intentionally no way* to use **Local Vault** without a user being passkey-authenticated at least once (per device), at initial passkey (or vault) setup.
 
-## Manually setting lock-key when connecting to existing vault
+## Manually using lock-key to connect to existing vault
 
 To silently (without passkey prompting!) connect to an existing vault, using a known lock-key (via its vault-ID):
 
