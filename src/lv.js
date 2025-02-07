@@ -9,6 +9,7 @@ import {
 	generateEntropy,
 	listLocalIdentities,
 	removeLocalAccount,
+	cacheLockKey,
 	clearLockKeyCache,
 } from "@lo-fi/local-data-lock";
 
@@ -93,6 +94,7 @@ async function connect({
 		relyingPartyName = "Local Vault",
 		localIdentity: newLocalIdentity,
 		useLockKey,
+		cacheManualLockKey = true,
 		...keyOptions
 	} = {},
 	addNewVault = false,
@@ -229,6 +231,11 @@ async function connect({
 						vaultEntry,
 						lockData(vaultEntry.data,vaultLockKey)
 					);
+				}
+
+				// ensure manually provided lock-key is cached?
+				if (vaultLockKey == useLockKey && cacheManualLockKey) {
+					cacheLockKey(useLockKey);
 				}
 
 				return vaults[vaultID];

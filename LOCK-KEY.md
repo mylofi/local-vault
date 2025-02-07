@@ -226,6 +226,27 @@ var vault = await connect({
 
 **Note:** If `vaultID` is not known (or was lost!), a vault can still be connected via ["discovery mode"](README.md#discoverable-vaults). However, silent connection via `useLockKey` is not allowed for this mode -- doing so will throw an error! Instead, the user must instead be prompted for a passkey authentication to pull the lock-key. You could then re-save that vault ID (`vault.id`), along with the lock-key, to enable subsequent silent reconnections.
 
+## Disabling auto-caching of manually specified lock-key
+
+By default, specifying a lock-key manually via `useLockKey` caches that lock-key for subsequent uses. This is typically what you would prefer.
+
+However, if you plan to manage the lock-key yourself, selectively choosing when the user should be re-prompted for their passkey authentication, you can prevent caching via `cacheManualLockKey`:
+
+```js
+var existingLockKey = /* .. */;
+
+var vault = await connect({
+    storageType: /* .. */,
+    vaultID: existingVaultID,
+    keyOptions: {
+        useLockKey: existingLockKey,
+        cacheManualLockKey: false       // <-- disable auto-caching
+    }
+});
+```
+
+If you disable caching, the next call to any of the vault's API methods (`get()`, `set()`, etc) will re-prompt the user for a passkey authentication. But to ensure any of *those* API method calls are silent (no passkey authentication prompt), [manually set the lock-key on each instance operation](#manually-setting-lock-key-for-vault-instance-operations).
+
 ## Manually setting lock-key for vault instance operations
 
 Most of a [vault instance's methods](README.md#vault-instance-api) may be called "silently" (ensuring no passkey authentication prompt even if the cached lock-key has expired), with an optional object parameter to specify which lock-key to use.
