@@ -16,7 +16,10 @@ import {
 	listLocalIdentities,
 	removeLocalAccount,
 } from "local-vault/src";
-import { clearLockKeyCache, } from "@lo-fi/local-data-lock";
+import {
+	clearLockKeyCache,
+	configure,
+} from "@lo-fi/local-data-lock";
 
 // simple helper util for showing a spinner
 // (during slower passkey operations)
@@ -198,6 +201,11 @@ async function promptVaultOptions(
 	});
 
 	if (result.isConfirmed) {
+		// (re-)configure LDL to use the selected
+		// storage-type for its local accounts
+		configure({
+			accountStorage: result.value.storageType,
+		});
 		return result.value;
 	}
 
